@@ -74,12 +74,6 @@ func TestNewPGXPoolErrors(t *testing.T) {
 	}
 }
 
-func canceledContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	return ctx
-}
-
 func TestLogLevelFromEnv(t *testing.T) {
 	tests := []struct {
 		name    string
