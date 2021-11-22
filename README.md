@@ -1,5 +1,5 @@
 # pgxtutorial
-[![GoDoc](https://godoc.org/github.com/henvic/pgxtutorial?status.svg)](https://godoc.org/github.com/henvic/pgxtutorial) [![Build Status](https://github.com/henvic/pgxtutorial/workflows/Tests/badge.svg)](https://github.com/henvic/pgxtutorial/actions?query=workflow%3ATests) [![Coverage Status](https://coveralls.io/repos/henvic/pgxtutorial/badge.svg)](https://coveralls.io/r/henvic/pgxtutorial)
+[![GoDoc](https://godoc.org/github.com/henvic/pgxtutorial?status.svg)](https://godoc.org/github.com/henvic/pgxtutorial) [![Build Status](https://github.com/henvic/pgxtutorial/workflows/Integration/badge.svg)](https://github.com/henvic/pgxtutorial/actions?query=workflow%3AIntegration) [![Coverage Status](https://coveralls.io/repos/henvic/pgxtutorial/badge.svg)](https://coveralls.io/r/henvic/pgxtutorial)
 
 This is an accompanying repository of the article [Back to basics: Writing an application using Go and PostgreSQL](https://henvic.dev/posts/go-postgres) by [Henrique Vicente](https://henvic.dev/). Feel free to open issues to ask any questions or comment on anything.
 
