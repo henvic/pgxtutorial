@@ -120,7 +120,7 @@ func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, er
 	var p product
 	// The following pgtools.Wildcard() call returns:
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
-	sql := fmt.Sprintf(`SELECT %s FROM "product" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(p))
+	sql := fmt.Sprintf(`SELECT %s FROM "product" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(p)) // #nosec G201
 	rows, err := db.Postgres.Query(ctx, sql, id)
 	if err == nil {
 		defer rows.Close()
@@ -156,7 +156,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 	}
 
 	where := strings.Join(w, " AND ")
-	sqlTotal := fmt.Sprintf(`SELECT COUNT(*) AS total FROM "product" WHERE %s`, where)
+	sqlTotal := fmt.Sprintf(`SELECT COUNT(*) AS total FROM "product" WHERE %s`, where) // #nosec G201
 	resp := inventory.SearchProductsResponse{
 		Items: []*inventory.Product{},
 	}
@@ -169,7 +169,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 	}
 
 	// Once the count query was made, add pagination args and query the results of the current page.
-	sql := fmt.Sprintf(`SELECT * FROM "product" WHERE %s ORDER BY "id" DESC`, where)
+	sql := fmt.Sprintf(`SELECT * FROM "product" WHERE %s ORDER BY "id" DESC`, where) // #nosec G201
 	if params.Pagination.Limit != 0 {
 		args = append(args, params.Pagination.Limit)
 		sql += fmt.Sprintf(` LIMIT $%d`, len(args))
@@ -321,7 +321,7 @@ func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.Produ
 	// The following pgtools.Wildcard() call returns:
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
 	var r review
-	sql := fmt.Sprintf(`SELECT %s FROM "review" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(r))
+	sql := fmt.Sprintf(`SELECT %s FROM "review" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(r)) // #nosec G201
 	rows, err := db.Postgres.Query(ctx, sql, id)
 	if err == nil {
 		defer rows.Close()
@@ -354,10 +354,10 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 		args = append(args, params.ReviewerID)
 		where = append(where, fmt.Sprintf(`"reviewer_id" = $%d`, len(args)))
 	}
-	sql := fmt.Sprintf(`SELECT %s FROM "review"`, pgtools.Wildcard(review{}))
+	sql := fmt.Sprintf(`SELECT %s FROM "review"`, pgtools.Wildcard(review{})) // #nosec G201
 	sqlTotal := `SELECT COUNT(*) AS total FROM "review"`
 	if len(where) > 0 {
-		w := " WHERE " + strings.Join(where, " AND ")
+		w := " WHERE " + strings.Join(where, " AND ") // #nosec G202
 		sql += w
 		sqlTotal += w
 	}
