@@ -1,0 +1,48 @@
+name: Integration
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  # Reference: https://docs.github.com/en/actions/guides/creating-postgresql-service-containers
+  postgres-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: runner
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_pgxtutorial
+        options: >-
+          --name postgres
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    env:
+      INTEGRATION_TESTDB: true
+      PGHOST: localhost
+      PGUSER: runner
+      PGPASSWORD: postgres
+      PGDATABASE: test_pgxtutorial
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-go@v1
+      with:
+        go-version: '1.17.x'
+    - name: Run Postgres tests
+      run: go test -v -race -count 1 -covermode atomic -coverprofile=profile.cov ./...
+    - name: Code coverage
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        path-to-profile: profile.cov

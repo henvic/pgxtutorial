@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/henvic/pgxtutorial/internal/api";
+
+// Inventory gRPC API service.
+service Inventory {
+  rpc SearchProducts (SearchProductsRequest) returns (SearchProductsResponse) {}
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse) {}
+  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse) {}
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse) {}
+  rpc GetProduct (GetProductRequest) returns (GetProductResponse) {}
+
+  rpc CreateProductReview (CreateProductReviewRequest) returns (CreateProductReviewResponse) {}
+  rpc UpdateProductReview (UpdateProductReviewRequest) returns (UpdateProductReviewResponse) {}
+  rpc DeleteProductReview (DeleteProductReviewRequest) returns (DeleteProductReviewResponse) {}
+  rpc GetProductReview (GetProductReviewRequest) returns (GetProductReviewResponse) {}
+}
+
+// SearchProductsRequest message.
+message SearchProductsRequest {
+  string query_string = 1;
+  optional int64 min_price = 2;
+  optional int64 max_price = 3;
+  optional int32 page = 4;
+}
+
+// SearchProductsResponse message.
+message SearchProductsResponse {
+  int32 total = 1;
+  repeated Product items = 2;
+}
+
+// Product message.
+message Product {
+  string id = 1;
+  int64 price = 2;
+  string name = 3;
+  string description = 4;
+}
+
+// CreateProductRequest message.
+message CreateProductRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price = 4;
+}
+
+// CreateProductResponse message.
+message CreateProductResponse {}
+
+// UpdateProductRequest message.
+message UpdateProductRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional int64 price = 4;
+}
+
+// UpdateProductResponse message.
+message UpdateProductResponse {}
+
+// DeleteProductRequest message.
+message DeleteProductRequest {
+  string id = 1;
+}
+
+// DeleteProductResponse message.
+message DeleteProductResponse {}
+
+// GetProductRequest message.
+message GetProductRequest {
+  string id = 1;
+}
+
+// GetProductResponse message.
+message GetProductResponse {
+  string id = 1;
+  int64 price = 2;
+  string name = 3;
+  string description = 4;
+  string created_at = 5;
+  string modified_at = 6;
+}
+
+// CreateProductReviewRequest message.
+message CreateProductReviewRequest {
+  string product_id = 2;
+  string reviewer_id = 3;
+  int32 score = 4;
+  string title = 5;
+  string description = 6;
+}
+
+// CreateProductReviewResponse message.
+message CreateProductReviewResponse {
+  string id = 1;
+}
+
+// UpdateProductReviewRequest message.
+message UpdateProductReviewRequest {
+  string id = 1;
+  optional int32 score = 4;
+  optional string title = 5;
+  optional string description = 6;
+}
+
+// UpdateProductReviewResponse message.
+message UpdateProductReviewResponse {}
+
+// DeleteProductReviewRequest message.
+message DeleteProductReviewRequest {
+  string id = 1;
+}
+
+// DeleteProductReviewResponse message.
+message DeleteProductReviewResponse {}
+
+// GetProductReviewRequest message.
+message GetProductReviewRequest {
+  string id = 1;
+}
+
+// GetProductReviewResponse message.
+message GetProductReviewResponse {
+  string id = 1;
+  string product_id = 2;
+  string reviewer_id = 3;
+  int32 score = 4;
+  string title = 5;
+  string description = 6;
+  string created_at = 7;
+  string modified_at = 8;
+}
