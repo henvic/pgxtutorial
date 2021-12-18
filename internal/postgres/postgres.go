@@ -10,6 +10,7 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hatch-studio/pgtools"
+	"github.com/henvic/pgxtutorial/internal/database"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
@@ -23,12 +24,48 @@ type DB struct {
 	Postgres *pgxpool.Pool
 }
 
+// WithAcquire returns a copy of the parent context which acquires a connection
+// to PostgreSQL from pgxpool to make sure commands executed in series reuse the
+// same database connection.
+//
+// To release the connection back to the pool, you must call postgres.Release(ctx).
+//
+// Example:
+// dbCtx := db.WithAcquire(ctx)
+// defer postgres.Release(dbCtx)
+func (db *DB) WithAcquire(ctx context.Context) (context.Context, error) {
+	res, err := db.Postgres.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return context.WithValue(ctx, connCtx{}, res), nil
+}
+
+// Release PostgreSQL connection acquired by context back to the pool.
+func Release(ctx context.Context) {
+	if res, ok := ctx.Value(connCtx{}).(*pgxpool.Conn); ok && res != nil {
+		res.Release()
+	}
+}
+
+// connCtx key.
+type connCtx struct{}
+
+// conn returns a PostgreSQL connection if a connection has been acquired by calling WithAcquire.
+// Otherwise, it returns *pgxpool.Pool which acquires the connection and closes it immediately after a SQL command is executed.
+func (db *DB) conn(ctx context.Context) database.PGX {
+	if res, ok := ctx.Value(connCtx{}).(*pgxpool.Conn); ok && res != nil {
+		return res
+	}
+	return db.Postgres
+}
+
 var _ inventory.DB = (*DB)(nil) // Check if methods expected by inventory.DB are implemented correctly.
 
 // CreateProduct creates a new product.
 func (db *DB) CreateProduct(ctx context.Context, params inventory.CreateProductParams) error {
 	const sql = `INSERT INTO product ("id", "name", "description", "price") VALUES ($1, $2, $3, $4);`
-	switch _, err := db.Postgres.Exec(ctx, sql, params.ID, params.Name, params.Description, params.Price); {
+	switch _, err := db.conn(ctx).Exec(ctx, sql, params.ID, params.Name, params.Description, params.Price); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:
@@ -73,7 +110,7 @@ func (db *DB) UpdateProduct(ctx context.Context, params inventory.UpdateProductP
 	"price" = COALESCE($3, "price"),
 	"modified_at" = now()
 	WHERE id = $4`
-	ct, err := db.Postgres.Exec(ctx, sql,
+	ct, err := db.conn(ctx).Exec(ctx, sql,
 		params.Name,
 		params.Description,
 		params.Price,
@@ -121,7 +158,7 @@ func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, er
 	// The following pgtools.Wildcard() call returns:
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
 	sql := fmt.Sprintf(`SELECT %s FROM "product" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(p)) // #nosec G201
-	rows, err := db.Postgres.Query(ctx, sql, id)
+	rows, err := db.conn(ctx).Query(ctx, sql, id)
 	if err == nil {
 		defer rows.Close()
 		err = pgxscan.ScanOne(&p, rows)
@@ -160,7 +197,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 	resp := inventory.SearchProductsResponse{
 		Items: []*inventory.Product{},
 	}
-	switch err := db.Postgres.QueryRow(ctx, sqlTotal, args...).Scan(&resp.Total); {
+	switch err := db.conn(ctx).QueryRow(ctx, sqlTotal, args...).Scan(&resp.Total); {
 	case err == context.Canceled || err == context.DeadlineExceeded:
 		return nil, err
 	case err != nil:
@@ -179,7 +216,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 		sql += fmt.Sprintf(` OFFSET $%d`, len(args))
 	}
 
-	switch rows, err := db.Postgres.Query(ctx, sql, args...); {
+	switch rows, err := db.conn(ctx).Query(ctx, sql, args...); {
 	case err == context.Canceled || err == context.DeadlineExceeded:
 		return nil, err
 	case err != nil:
@@ -202,7 +239,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 
 // DeleteProduct from the database.
 func (db *DB) DeleteProduct(ctx context.Context, id string) error {
-	switch _, err := db.Postgres.Exec(ctx, `DELETE FROM "product" WHERE "id" = $1`, id); {
+	switch _, err := db.conn(ctx).Exec(ctx, `DELETE FROM "product" WHERE "id" = $1`, id); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:
@@ -223,7 +260,7 @@ func (db *DB) CreateProductReview(ctx context.Context, params inventory.CreatePr
 		$1, $2, $3,
 		$4, $5, $6
 	);`
-	switch _, err := db.Postgres.Exec(ctx, sql,
+	switch _, err := db.conn(ctx).Exec(ctx, sql,
 		params.ID, params.ProductID, params.ReviewerID,
 		params.Title, params.Description, params.Score); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
@@ -274,7 +311,7 @@ func (db *DB) UpdateProductReview(ctx context.Context, params inventory.UpdatePr
 	"modified_at" = now()
 	WHERE id = $4`
 
-	switch ct, err := db.Postgres.Exec(ctx, sql, params.Title, params.Score, params.Description, params.ID); {
+	switch ct, err := db.conn(ctx).Exec(ctx, sql, params.Title, params.Score, params.Description, params.ID); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:
@@ -322,7 +359,7 @@ func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.Produ
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
 	var r review
 	sql := fmt.Sprintf(`SELECT %s FROM "review" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(r)) // #nosec G201
-	rows, err := db.Postgres.Query(ctx, sql, id)
+	rows, err := db.conn(ctx).Query(ctx, sql, id)
 	if err == nil {
 		defer rows.Close()
 		err = pgxscan.ScanOne(&r, rows)
@@ -365,7 +402,7 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 	resp := &inventory.ProductReviewsResponse{
 		Reviews: []*inventory.ProductReview{},
 	}
-	err := db.Postgres.QueryRow(ctx, sqlTotal, args...).Scan(&resp.Total)
+	err := db.conn(ctx).QueryRow(ctx, sqlTotal, args...).Scan(&resp.Total)
 	if err == context.Canceled || err == context.DeadlineExceeded {
 		return nil, err
 	}
@@ -384,7 +421,7 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 		args = append(args, params.Pagination.Offset)
 		sql += fmt.Sprintf(` OFFSET $%d`, len(args))
 	}
-	rows, err := db.Postgres.Query(ctx, sql, args...)
+	rows, err := db.conn(ctx).Query(ctx, sql, args...)
 	if err == context.Canceled || err == context.DeadlineExceeded {
 		return nil, err
 	}
@@ -407,7 +444,7 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 
 // DeleteProductReview from the database.
 func (db *DB) DeleteProductReview(ctx context.Context, id string) error {
-	switch _, err := db.Postgres.Exec(ctx, `DELETE FROM "review" WHERE id = $1`, id); {
+	switch _, err := db.conn(ctx).Exec(ctx, `DELETE FROM "review" WHERE id = $1`, id); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:

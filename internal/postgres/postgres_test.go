@@ -24,6 +24,46 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestWithAcquire(t *testing.T) {
+	t.Parallel()
+	migration := sqltest.New(t, sqltest.Options{
+		Force: *force,
+		Path:  "../../migrations",
+	})
+	pool := migration.Setup(context.Background(), "")
+
+	db := &DB{
+		Postgres: pool,
+	}
+
+	// Reuse the same connection for executing SQL commands.
+	dbCtx, err := db.WithAcquire(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
+	}
+	defer Release(dbCtx)
+}
+
+func TestWithAcquireClosedPool(t *testing.T) {
+	t.Parallel()
+	migration := sqltest.New(t, sqltest.Options{
+		Force: *force,
+
+		// Opt out of automatic tearing down migration as we want to close the connection pool before t.Cleanup() is called.
+		SkipTeardown: true,
+
+		Path: "../../migrations",
+	})
+	pool := migration.Setup(context.Background(), "")
+	db := &DB{
+		Postgres: pool,
+	}
+	migration.Teardown(context.Background())
+	if _, err := db.WithAcquire(context.Background()); err == nil {
+		t.Errorf("expected error acquiring pgx connection for context, got nil")
+	}
+}
+
 func TestCreateProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
@@ -467,6 +507,14 @@ func TestSearchProducts(t *testing.T) {
 		Postgres: pool,
 	}
 
+	// On this test, reuse the same connection for executing SQL commands
+	// to check acquiring and releasing a connection passed via context is working as expected.
+	dbCtx, err := db.WithAcquire(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
+	}
+	defer Release(dbCtx)
+
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
 			ID:          "desk",
@@ -507,7 +555,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: dbCtx,
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 				},
@@ -530,7 +578,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "product_very_expensive",
 			args: args{
-				ctx: context.Background(),
+				ctx: dbCtx,
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 					MinPrice:    900,
@@ -545,7 +593,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "home",
 			args: args{
-				ctx: context.Background(),
+				ctx: dbCtx,
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 				},
@@ -576,7 +624,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "home_paginated",
 			args: args{
-				ctx: context.Background(),
+				ctx: dbCtx,
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 					Pagination: inventory.Pagination{
@@ -603,7 +651,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "home_cheaper",
 			args: args{
-				ctx: context.Background(),
+				ctx: dbCtx,
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 					MaxPrice:    130,
