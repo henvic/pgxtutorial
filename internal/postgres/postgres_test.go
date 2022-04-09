@@ -24,6 +24,67 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestTransactionContext(t *testing.T) {
+	t.Parallel()
+
+	migration := sqltest.New(t, sqltest.Options{
+		Force: *force,
+		Path:  "../../migrations",
+	})
+	pool := migration.Setup(context.Background(), "")
+	db := &DB{
+		Postgres: pool,
+	}
+
+	ctx, err := db.TransactionContext(context.Background())
+	if err != nil {
+		t.Errorf("cannot create transaction context: %v", err)
+	}
+	defer db.Rollback(ctx)
+
+	if err := db.Commit(ctx); err != nil {
+		t.Errorf("cannot commit: %v", err)
+	}
+}
+
+func TestTransactionContextCanceled(t *testing.T) {
+	t.Parallel()
+
+	migration := sqltest.New(t, sqltest.Options{
+		Force: *force,
+		Path:  "../../migrations",
+	})
+	pool := migration.Setup(context.Background(), "")
+	db := &DB{
+		Postgres: pool,
+	}
+
+	canceledCtx, immediateCancel := context.WithCancel(context.Background())
+	immediateCancel()
+
+	if _, err := db.TransactionContext(canceledCtx); err != context.Canceled {
+		t.Errorf("unexpected error value: %v", err)
+	}
+}
+
+func TestCommitNoTransaction(t *testing.T) {
+	t.Parallel()
+
+	db := &DB{}
+	if err := db.Commit(context.Background()); err.Error() != "context has no transaction" {
+		t.Errorf("unexpected error value: %v", err)
+	}
+}
+
+func TestRollbackNoTransaction(t *testing.T) {
+	t.Parallel()
+
+	db := &DB{}
+	if err := db.Rollback(context.Background()); err.Error() != "context has no transaction" {
+		t.Errorf("unexpected error value: %v", err)
+	}
+}
+
 func TestWithAcquire(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
