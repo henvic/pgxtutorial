@@ -72,8 +72,8 @@ func LogLevelFromEnv() (pgx.LogLevel, error) {
 // os.Stderr by default.
 type PGXStdLogger struct{}
 
-func (l *PGXStdLogger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
-	args := make([]interface{}, 0, len(data)+2) // making space for arguments + level + msg
+func (l *PGXStdLogger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]any) {
+	args := make([]any, 0, len(data)+2) // making space for arguments + level + msg
 	args = append(args, level, msg)
 	for k, v := range data {
 		args = append(args, fmt.Sprintf("%s=%v", k, v))

@@ -218,7 +218,7 @@ func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, er
 // SearchProducts returns a list of products.
 func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProductsParams) (*inventory.SearchProductsResponse, error) {
 	var (
-		args = []interface{}{"%" + params.QueryString + "%"}
+		args = []any{"%" + params.QueryString + "%"}
 		w    = []string{"name LIKE $1"}
 	)
 
@@ -419,7 +419,7 @@ func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.Produ
 // GetProductReviews gets reviews for a given product or from a given user.
 func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductReviewsParams) (*inventory.ProductReviewsResponse, error) {
 	var (
-		args  []interface{}
+		args  []any
 		where []string
 	)
 	if params.ProductID != "" {

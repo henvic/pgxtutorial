@@ -50,7 +50,7 @@ type PGXQuerier interface {
 
 	// Exec executes sql. sql can be either a prepared statement name or an SQL string. arguments should be referenced
 	// positionally from the sql string as $1, $2, etc.
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 
 	// Query executes sql with args. If there is an error the returned Rows will be returned in an error state. So it is
 	// allowed to ignore the error returned from Query and handle it in Rows.
@@ -58,17 +58,17 @@ type PGXQuerier interface {
 	// For extra control over how the query is executed, the types QuerySimpleProtocol, QueryResultFormats, and
 	// QueryResultFormatsByOID may be used as the first args to control exactly how the query is executed. This is rarely
 	// needed. See the documentation for those types for details.
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 
 	// QueryFunc executes sql with args. For each row returned by the query the values will scanned into the elements of
 	// scans and f will be called. If any row fails to scan or f returns an error the query will be aborted and the error
 	// will be returned.
-	QueryFunc(ctx context.Context, sql string, args []interface{}, scans []interface{}, f func(pgx.QueryFuncRow) error) (pgconn.CommandTag, error)
+	QueryFunc(ctx context.Context, sql string, args []any, scans []any, f func(pgx.QueryFuncRow) error) (pgconn.CommandTag, error)
 
 	// QueryRow is a convenience wrapper over Query. Any error that occurs while
 	// querying is deferred until calling Scan on the returned Row. That Row will
 	// error with ErrNoRows if no rows are returned.
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 
 	// SendBatch sends all queued queries to the server at once. All queries are run in an implicit transaction unless
 	// explicit transaction control statements are executed. The returned BatchResults must be closed before the connection
