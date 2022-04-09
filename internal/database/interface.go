@@ -16,24 +16,29 @@ import (
 //
 // Reference: https://pkg.go.dev/github.com/jackc/pgx/v4
 type PGX interface {
-	// Begin starts a transaction. Unlike database/sql, the context only affects the begin command. i.e. there is no
-	// auto-rollback on context cancellation.
-	Begin(ctx context.Context) (pgx.Tx, error)
-
 	// BeginTx starts a transaction with txOptions determining the transaction mode. Unlike database/sql, the context only
 	// affects the begin command. i.e. there is no auto-rollback on context cancellation.
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
-
-	// BeginFunc starts a transaction and calls f. If f does not return an error the transaction is committed. If f returns
-	// an error the transaction is rolled back. The context will be used when executing the transaction control statements
-	// (BEGIN, ROLLBACK, and COMMIT) but does not otherwise affect the execution of f.
-	BeginFunc(ctx context.Context, f func(pgx.Tx) error) error
 
 	// BeginTxFunc starts a transaction with txOptions determining the transaction mode and calls f. If f does not return
 	// an error the transaction is committed. If f returns an error the transaction is rolled back. The context will be
 	// used when executing the transaction control statements (BEGIN, ROLLBACK, and COMMIT) but does not otherwise affect
 	// the execution of f.
 	BeginTxFunc(ctx context.Context, txOptions pgx.TxOptions, f func(pgx.Tx) error) error
+
+	PGXQuerier
+}
+
+// PGXQuerier interface with methods used for everything, including transactions.
+type PGXQuerier interface {
+	// Begin starts a transaction. Unlike database/sql, the context only affects the begin command. i.e. there is no
+	// auto-rollback on context cancellation.
+	Begin(ctx context.Context) (pgx.Tx, error)
+
+	// BeginFunc starts a transaction and calls f. If f does not return an error the transaction is committed. If f returns
+	// an error the transaction is rolled back. The context will be used when executing the transaction control statements
+	// (BEGIN, ROLLBACK, and COMMIT) but does not otherwise affect the execution of f.
+	BeginFunc(ctx context.Context, f func(pgx.Tx) error) error
 
 	// CopyFrom uses the PostgreSQL copy protocol to perform bulk data insertion.
 	// It returns the number of rows copied and an error.

@@ -41,7 +41,16 @@ func TestWithAcquire(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
 	}
-	defer Release(dbCtx)
+	defer db.Release(dbCtx)
+
+	// Check if we can acquire a connection only for a given context.
+	defer func() {
+		want := "context already has a connection acquired"
+		if r := recover(); r != want {
+			t.Errorf("expected panic %v, got %v instead", want, r)
+		}
+	}()
+	db.WithAcquire(dbCtx)
 }
 
 func TestWithAcquireClosedPool(t *testing.T) {
@@ -513,7 +522,7 @@ func TestSearchProducts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
 	}
-	defer Release(dbCtx)
+	defer db.Release(dbCtx)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
