@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	sync "sync"
+	"time"
 
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"google.golang.org/grpc"
@@ -98,6 +99,8 @@ func (s *httpServer) Run(ctx context.Context, address string) error {
 	s.http = &http.Server{
 		Addr:    address,
 		Handler: handler,
+
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 	log.Printf("HTTP server listening at %s\n", address)
 	if err := s.http.ListenAndServe(); err != http.ErrServerClosed {
