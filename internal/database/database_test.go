@@ -6,9 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/log/testingadapter"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
 func TestMain(m *testing.M) {
@@ -22,7 +23,7 @@ func TestMain(m *testing.M) {
 func TestNewPGXPool(t *testing.T) {
 	t.Parallel()
 
-	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{}, pgx.LogLevelInfo)
+	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{}, tracelog.LogLevelInfo)
 	if err != nil {
 		t.Fatalf("NewPGXPool() error: %v", err)
 	}
@@ -39,8 +40,8 @@ func TestNewPGXPoolErrors(t *testing.T) {
 	type args struct {
 		ctx        context.Context
 		connString string
-		logger     pgx.Logger
-		logLevel   pgx.LogLevel
+		logger     tracelog.Logger
+		logLevel   tracelog.LogLevel
 	}
 	tests := []struct {
 		name    string
@@ -53,8 +54,8 @@ func TestNewPGXPoolErrors(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				connString: "http://localhost",
-				logger:     &PGXStdLogger{},
-				logLevel:   pgx.LogLevelInfo,
+				logger:     testingadapter.NewLogger(t),
+				logLevel:   tracelog.LogLevelInfo,
 			},
 			want:    nil,
 			wantErr: true,
@@ -78,22 +79,22 @@ func TestLogLevelFromEnv(t *testing.T) {
 	tests := []struct {
 		name    string
 		env     string
-		want    pgx.LogLevel
+		want    tracelog.LogLevel
 		wantErr string
 	}{
 		{
 			name: "default",
-			want: pgx.LogLevelInfo,
+			want: tracelog.LogLevelInfo,
 		},
 		{
 			name: "warn",
 			env:  "warn",
-			want: pgx.LogLevelWarn,
+			want: tracelog.LogLevelWarn,
 		},
 		{
 			name:    "error",
 			env:     "bad",
-			want:    pgx.LogLevelDebug,
+			want:    tracelog.LogLevelDebug,
 			wantErr: "pgx configuration: invalid log level",
 		},
 	}

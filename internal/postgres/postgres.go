@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/hatch-studio/pgtools"
+	"github.com/henvic/pgtools"
 	"github.com/henvic/pgxtutorial/internal/database"
 	"github.com/henvic/pgxtutorial/internal/inventory"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // DB handles database communication with PostgreSQL.
@@ -198,12 +197,11 @@ func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, er
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
 	sql := fmt.Sprintf(`SELECT %s FROM "product" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(p)) // #nosec G201
 	rows, err := db.conn(ctx).Query(ctx, sql, id)
-	if err == nil {
-		defer rows.Close()
-		err = pgxscan.ScanOne(&p, rows)
-	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return nil, err
+	}
+	if err == nil {
+		p, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[product])
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -255,25 +253,22 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 		sql += fmt.Sprintf(` OFFSET $%d`, len(args))
 	}
 
-	switch rows, err := db.conn(ctx).Query(ctx, sql, args...); {
-	case err == context.Canceled || err == context.DeadlineExceeded:
+	rows, err := db.conn(ctx).Query(ctx, sql, args...)
+	if err == context.Canceled || err == context.DeadlineExceeded {
 		return nil, err
-	case err != nil:
+	}
+	var products []product
+	if err == nil {
+		products, err = pgx.CollectRows(rows, pgx.RowToStructByPos[product])
+	}
+	if err != nil {
 		log.Printf("cannot get products from the database: %v\n", err)
 		return nil, errors.New("cannot get products")
-	default:
-		defer rows.Close()
-		rs := pgxscan.NewRowScanner(rows)
-		for rows.Next() {
-			var p product
-			if err := rs.Scan(&p); err != nil {
-				log.Printf("cannot scan returned rows from the database: %v\n", err)
-				return nil, errors.New("cannot get products")
-			}
-			resp.Items = append(resp.Items, p.dto())
-		}
-		return &resp, nil
 	}
+	for _, p := range products {
+		resp.Items = append(resp.Items, p.dto())
+	}
+	return &resp, nil
 }
 
 // DeleteProduct from the database.
@@ -399,12 +394,11 @@ func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.Produ
 	var r review
 	sql := fmt.Sprintf(`SELECT %s FROM "review" WHERE id = $1 LIMIT 1`, pgtools.Wildcard(r)) // #nosec G201
 	rows, err := db.conn(ctx).Query(ctx, sql, id)
-	if err == nil {
-		defer rows.Close()
-		err = pgxscan.ScanOne(&r, rows)
-	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return nil, err
+	}
+	if err == nil {
+		r, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[review])
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -464,18 +458,15 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 	if err == context.Canceled || err == context.DeadlineExceeded {
 		return nil, err
 	}
+	var reviews []review
+	if err == nil {
+		reviews, err = pgx.CollectRows(rows, pgx.RowToStructByPos[review])
+	}
 	if err != nil {
 		log.Printf("cannot get reviews from the database: %v\n", err)
 		return nil, errors.New("cannot get reviews")
 	}
-	defer rows.Close()
-	rs := pgxscan.NewRowScanner(rows)
-	for rows.Next() {
-		var r review
-		if err := rs.Scan(&r); err != nil {
-			log.Printf("cannot scan returned rows from the database: %v\n", err)
-			return nil, errors.New("cannot get reviews")
-		}
+	for _, r := range reviews {
 		resp.Reviews = append(resp.Reviews, r.dto())
 	}
 	return resp, nil

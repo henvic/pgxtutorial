@@ -39,4 +39,4 @@ $ go run ./cmd/pgxtutorial
 ```
 
 ## See also
-* [pgtools](https://github.com/hatch-studio/pgtools/) by [HATCH Studio](https://hatchstudio.co/)
+* [pgtools](https://github.com/henvic/pgtools/)

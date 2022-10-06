@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // PGX limited interface with high-level API for pgx methods safe to be used in high-level business logic packages.
@@ -14,17 +14,11 @@ import (
 // Caveat: It doesn't expose a method to acquire a *pgx.Conn or handle notifications,
 // so it's not compatible with LISTEN/NOTIFY.
 //
-// Reference: https://pkg.go.dev/github.com/jackc/pgx/v4
+// Reference: https://pkg.go.dev/github.com/jackc/pgx/v5
 type PGX interface {
 	// BeginTx starts a transaction with txOptions determining the transaction mode. Unlike database/sql, the context only
 	// affects the begin command. i.e. there is no auto-rollback on context cancellation.
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
-
-	// BeginTxFunc starts a transaction with txOptions determining the transaction mode and calls f. If f does not return
-	// an error the transaction is committed. If f returns an error the transaction is rolled back. The context will be
-	// used when executing the transaction control statements (BEGIN, ROLLBACK, and COMMIT) but does not otherwise affect
-	// the execution of f.
-	BeginTxFunc(ctx context.Context, txOptions pgx.TxOptions, f func(pgx.Tx) error) error
 
 	PGXQuerier
 }
@@ -34,11 +28,6 @@ type PGXQuerier interface {
 	// Begin starts a transaction. Unlike database/sql, the context only affects the begin command. i.e. there is no
 	// auto-rollback on context cancellation.
 	Begin(ctx context.Context) (pgx.Tx, error)
-
-	// BeginFunc starts a transaction and calls f. If f does not return an error the transaction is committed. If f returns
-	// an error the transaction is rolled back. The context will be used when executing the transaction control statements
-	// (BEGIN, ROLLBACK, and COMMIT) but does not otherwise affect the execution of f.
-	BeginFunc(ctx context.Context, f func(pgx.Tx) error) error
 
 	// CopyFrom uses the PostgreSQL copy protocol to perform bulk data insertion.
 	// It returns the number of rows copied and an error.
@@ -59,11 +48,6 @@ type PGXQuerier interface {
 	// QueryResultFormatsByOID may be used as the first args to control exactly how the query is executed. This is rarely
 	// needed. See the documentation for those types for details.
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-
-	// QueryFunc executes sql with args. For each row returned by the query the values will scanned into the elements of
-	// scans and f will be called. If any row fails to scan or f returns an error the query will be aborted and the error
-	// will be returned.
-	QueryFunc(ctx context.Context, sql string, args []any, scans []any, f func(pgx.QueryFuncRow) error) (pgconn.CommandTag, error)
 
 	// QueryRow is a convenience wrapper over Query. Any error that occurs while
 	// querying is deferred until calling Scan on the returned Row. That Row will

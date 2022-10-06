@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/hatch-studio/pgtools/sqltest"
+	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 )
 
@@ -29,7 +29,7 @@ func TestTransactionContext(t *testing.T) {
 
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 	db := &DB{
@@ -52,7 +52,7 @@ func TestTransactionContextCanceled(t *testing.T) {
 
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 	db := &DB{
@@ -89,7 +89,7 @@ func TestWithAcquire(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -122,7 +122,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 		// Opt out of automatic tearing down migration as we want to close the connection pool before t.Cleanup() is called.
 		SkipTeardown: true,
 
-		Path: "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 	db := &DB{
@@ -138,7 +138,7 @@ func TestCreateProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -289,7 +289,7 @@ func TestUpdateProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -483,7 +483,7 @@ func TestGetProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -569,7 +569,7 @@ func TestSearchProducts(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -791,7 +791,7 @@ func TestDeleteProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -895,7 +895,7 @@ func TestCreateProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -1074,7 +1074,7 @@ func TestUpdateProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -1335,7 +1335,7 @@ func TestGetProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -1462,7 +1462,7 @@ func TestGetProductReviews(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 
@@ -1669,7 +1669,7 @@ func TestDeleteProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Path:  "../../migrations",
+		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
 

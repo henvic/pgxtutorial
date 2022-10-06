@@ -7,72 +7,62 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
 // NewPGXPool is a PostgreSQL connection pool for pgx.
 //
 // Usage:
-// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{}, pgx.LogLevelInfo)
+// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{}, tracelog.LogLevelInfo)
 // defer pgPool.Close() // Close any remaining connections before shutting down your application.
 //
 // Instead of passing a configuration explictly with a connString,
 // you might use PG environment variables such as the following to configure the database:
 // PGDATABASE, PGHOST, PGPORT, PGUSER, PGPASSWORD, PGCONNECT_TIMEOUT, etc.
 // Reference: https://www.postgresql.org/docs/current/libpq-envars.html
-func NewPGXPool(ctx context.Context, connString string, logger pgx.Logger, logLevel pgx.LogLevel) (*pgxpool.Pool, error) {
+func NewPGXPool(ctx context.Context, connString string, logger tracelog.Logger, logLevel tracelog.LogLevel) (*pgxpool.Pool, error) {
 	conf, err := pgxpool.ParseConfig(connString) // Using environment variables instead of a connection string.
 	if err != nil {
 		return nil, err
 	}
 
-	conf.ConnConfig.Logger = logger
-
-	// Set the log level for pgx, if set.
-	if logLevel != 0 {
-		conf.ConnConfig.LogLevel = logLevel
+	conf.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   logger,
+		LogLevel: logLevel,
 	}
-
-	// pgx, by default, does some I/O operation on initialization of a pool to check if the database is reachable.
-	// Comment the following line if you don't want pgx to try to connect pool once the Connect function is called,
-	//
-	// If comment it, and your application seems stuck, you probably forgot to set up PGCONNECT_TIMEOUT,
-	// and your code is hanging waiting for a connection to be established.
-	conf.LazyConnect = true
 
 	// pgxpool default max number of connections is the number of CPUs on your machine returned by runtime.NumCPU().
 	// This number is very conservative, and you might be able to improve performance for highly concurrent applications
 	// by increasing it.
 	// conf.MaxConns = runtime.NumCPU() * 5
-
-	pool, err := pgxpool.ConnectConfig(ctx, conf)
+	pool, err := pgxpool.NewWithConfig(ctx, conf)
 	if err != nil {
 		return nil, fmt.Errorf("pgx connection error: %w", err)
 	}
 	return pool, nil
 }
 
-// LogLevelFromEnv returns the pgx.LogLevel from the environment variable PGX_LOG_LEVEL.
-// By default this is info (pgx.LogLevelInfo), which is good for development.
-// For deployments, something like pgx.LogLevelWarn is better choice.
-func LogLevelFromEnv() (pgx.LogLevel, error) {
+// LogLevelFromEnv returns the tracelog.LogLevel from the environment variable PGX_LOG_LEVEL.
+// By default this is info (tracelog.LogLevelInfo), which is good for development.
+// For deployments, something like tracelog.LogLevelWarn is better choice.
+func LogLevelFromEnv() (tracelog.LogLevel, error) {
 	if level := os.Getenv("PGX_LOG_LEVEL"); level != "" {
-		l, err := pgx.LogLevelFromString(level)
+		l, err := tracelog.LogLevelFromString(level)
 		if err != nil {
-			return pgx.LogLevelDebug, fmt.Errorf("pgx configuration: %w", err)
+			return tracelog.LogLevelDebug, fmt.Errorf("pgx configuration: %w", err)
 		}
 		return l, nil
 	}
-	return pgx.LogLevelInfo, nil
+	return tracelog.LogLevelInfo, nil
 }
 
 // PGXStdLogger prints pgx logs to the standard logger.
 // os.Stderr by default.
 type PGXStdLogger struct{}
 
-func (l *PGXStdLogger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]any) {
+func (l *PGXStdLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
 	args := make([]any, 0, len(data)+2) // making space for arguments + level + msg
 	args = append(args, level, msg)
 	for k, v := range data {

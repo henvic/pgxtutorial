@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hatch-studio/pgtools/sqltest"
+	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
 )
@@ -57,7 +57,7 @@ func serviceWithPostgres(t *testing.T) *inventory.Service {
 		migration := sqltest.New(t, sqltest.Options{
 			Force:                   *force,
 			TemporaryDatabasePrefix: "test_inventory_pkg", // Avoid a clash between database names of packages on parallel execution.
-			Path:                    "../../migrations",
+			Files:                   os.DirFS("../../migrations"),
 		})
 		db = inventory.NewService(&postgres.DB{
 			Postgres: migration.Setup(context.Background(), ""),
