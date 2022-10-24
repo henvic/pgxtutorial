@@ -100,7 +100,7 @@ func (s *httpServer) Run(ctx context.Context, address string) error {
 		Addr:    address,
 		Handler: handler,
 
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second, // mitigate risk of Slowloris Attack
 	}
 	log.Printf("HTTP server listening at %s\n", address)
 	if err := s.http.ListenAndServe(); err != http.ErrServerClosed {
