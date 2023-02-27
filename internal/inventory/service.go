@@ -16,6 +16,7 @@ type Service struct {
 }
 
 // DB layer.
+//
 //go:generate mockgen --build_flags=--mod=mod -package inventory -destination mock_db_test.go . DB
 type DB interface {
 	// CreateProduct creates a new product.
@@ -61,10 +62,11 @@ func (e ValidationError) Error() string {
 // Pagination is used to paginate results.
 //
 // Usage:
-// Pagination{
-// 	Limit: limit,
-// 	Offset: (page - 1) * limit
-// }
+//
+//	Pagination{
+//		Limit: limit,
+//		Offset: (page - 1) * limit
+//	}
 type Pagination struct {
 	// Limit is the maximum number of results to return on this page.
 	Limit int
