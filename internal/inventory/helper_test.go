@@ -59,9 +59,7 @@ func serviceWithPostgres(t *testing.T) *inventory.Service {
 			TemporaryDatabasePrefix: "test_inventory_pkg", // Avoid a clash between database names of packages on parallel execution.
 			Files:                   os.DirFS("../../migrations"),
 		})
-		db = inventory.NewService(&postgres.DB{
-			Postgres: migration.Setup(context.Background(), ""),
-		})
+		db = inventory.NewService(postgres.NewDB(migration.Setup(context.Background(), "")))
 	}
 	return db
 }

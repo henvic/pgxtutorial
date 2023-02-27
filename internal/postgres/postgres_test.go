@@ -32,9 +32,7 @@ func TestTransactionContext(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	ctx, err := db.TransactionContext(context.Background())
 	if err != nil {
@@ -55,9 +53,7 @@ func TestTransactionContextCanceled(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	canceledCtx, immediateCancel := context.WithCancel(context.Background())
 	immediateCancel()
@@ -92,10 +88,7 @@ func TestWithAcquire(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	// Reuse the same connection for executing SQL commands.
 	dbCtx, err := db.WithAcquire(context.Background())
@@ -125,9 +118,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 	migration.Teardown(context.Background())
 	if _, err := db.WithAcquire(context.Background()); err == nil {
 		t.Errorf("expected error acquiring pgx connection for context, got nil")
@@ -141,10 +132,7 @@ func TestCreateProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	type args struct {
 		ctx    context.Context
@@ -292,10 +280,7 @@ func TestUpdateProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -486,10 +471,7 @@ func TestGetProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -572,10 +554,7 @@ func TestSearchProducts(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	// On this test, reuse the same connection for executing SQL commands
 	// to check acquiring and releasing a connection passed via context is working as expected.
@@ -794,10 +773,7 @@ func TestDeleteProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -883,7 +859,7 @@ func TestDeleteProduct(t *testing.T) {
 	}
 	// Check if a limited number of rows were deleted by verifying one product ("do_not_erase") exists on the database.
 	var total int
-	if err := db.Postgres.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "product"`).Scan(&total); err != nil {
+	if err := pool.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "product"`).Scan(&total); err != nil {
 		t.Fatalf(`failed to query "product" table: %v`, err)
 	}
 	if total != 1 {
@@ -898,10 +874,7 @@ func TestCreateProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1077,10 +1050,7 @@ func TestUpdateProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1338,10 +1308,7 @@ func TestGetProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1465,10 +1432,7 @@ func TestGetProductReviews(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1672,10 +1636,7 @@ func TestDeleteProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-
-	db := &DB{
-		Postgres: pool,
-	}
+	db := NewDB(pool)
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1797,7 +1758,7 @@ func TestDeleteProductReview(t *testing.T) {
 	}
 	// Check if a limited number of rows were deleted by verifying one review ("do_not_erase") exists on the database.
 	var total int
-	if err := db.Postgres.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "review"`).Scan(&total); err != nil {
+	if err := pool.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "review"`).Scan(&total); err != nil {
 		t.Fatalf(`failed to query "review" table: %v`, err)
 	}
 	if total != 1 {

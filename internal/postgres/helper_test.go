@@ -8,7 +8,7 @@ import (
 	"github.com/henvic/pgxtutorial/internal/inventory"
 )
 
-func createProducts(t testing.TB, db *DB, products []inventory.CreateProductParams) {
+func createProducts(t testing.TB, db DB, products []inventory.CreateProductParams) {
 	for _, p := range products {
 		if err := db.CreateProduct(context.Background(), p); err != nil {
 			t.Errorf("DB.CreateProduct() error = %v", err)
@@ -16,7 +16,7 @@ func createProducts(t testing.TB, db *DB, products []inventory.CreateProductPara
 	}
 }
 
-func createProductReviews(t testing.TB, db *DB, reviews []inventory.CreateProductReviewDBParams) {
+func createProductReviews(t testing.TB, db DB, reviews []inventory.CreateProductReviewDBParams) {
 	for _, r := range reviews {
 		if err := db.CreateProductReview(context.Background(), r); err != nil {
 			t.Errorf("DB.CreateProductReview() error = %v", err)

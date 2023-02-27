@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 
 func TestServiceCreateProduct(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
+	var service = serviceWithPostgres(t)
 	type args struct {
 		ctx    context.Context
 		params inventory.CreateProductParams
@@ -149,7 +149,7 @@ func TestServiceCreateProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -180,9 +180,9 @@ func TestServiceCreateProduct(t *testing.T) {
 
 func TestServiceUpdateProduct(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
+	var service = serviceWithPostgres(t)
 	// Add some products that will be modified next:
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "Original name",
@@ -405,7 +405,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -438,8 +438,8 @@ func TestServiceUpdateProduct(t *testing.T) {
 
 func TestServiceDeleteProduct(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "Product name",
@@ -526,7 +526,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -541,8 +541,8 @@ func TestServiceDeleteProduct(t *testing.T) {
 
 func TestServiceGetProduct(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "A product name",
@@ -628,7 +628,7 @@ func TestServiceGetProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -650,8 +650,8 @@ func TestServiceGetProduct(t *testing.T) {
 
 func TestServiceSearchProducts(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "desk",
 			Name:        "plain desk (home)",
@@ -933,7 +933,7 @@ func TestServiceSearchProducts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {

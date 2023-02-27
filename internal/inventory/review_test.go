@@ -14,8 +14,8 @@ import (
 
 func TestServiceCreateProductReview(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "Original name",
@@ -171,7 +171,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -205,8 +205,8 @@ func TestServiceCreateProductReview(t *testing.T) {
 
 func TestServiceUpdateProductReview(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "Original name",
@@ -221,14 +221,14 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		},
 	})
 	// Add some product reviews that will be modified next:
-	firstReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	firstReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "product",
 		ReviewerID:  "you",
 		Score:       4,
 		Title:       "My title",
 		Description: "My description",
 	})
-	secondReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	secondReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "product",
 		ReviewerID:  "me",
 		Score:       1,
@@ -394,7 +394,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -430,8 +430,8 @@ func TestServiceUpdateProductReview(t *testing.T) {
 
 func TestServiceDeleteProductReview(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "Product name",
@@ -439,7 +439,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 			Price:       123,
 		},
 	})
-	reviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	reviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "product",
 		ReviewerID:  "you",
 		Score:       4,
@@ -525,7 +525,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -540,8 +540,8 @@ func TestServiceDeleteProductReview(t *testing.T) {
 
 func TestServiceGetProductReview(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "product",
 			Name:        "A product name",
@@ -550,14 +550,14 @@ func TestServiceGetProductReview(t *testing.T) {
 		},
 	})
 	// Add some product reviews that will be modified next:
-	firstReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	firstReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "product",
 		ReviewerID:  "you",
 		Score:       4,
 		Title:       "My title",
 		Description: "My description",
 	})
-	secondReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	secondReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "product",
 		ReviewerID:  "me",
 		Score:       1,
@@ -658,7 +658,7 @@ func TestServiceGetProductReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {
@@ -682,8 +682,8 @@ func TestServiceGetProductReview(t *testing.T) {
 
 func TestServiceGetProductReviews(t *testing.T) {
 	t.Parallel()
-	var serviceWithDB = serviceWithPostgres(t)
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	var service = serviceWithPostgres(t)
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "chair",
 			Name:        "Office chair with headrest",
@@ -691,7 +691,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 			Price:       200,
 		},
 	})
-	createProducts(t, serviceWithDB, []inventory.CreateProductParams{
+	createProducts(t, service, []inventory.CreateProductParams{
 		{
 			ID:          "desk",
 			Name:        "study desk",
@@ -699,35 +699,35 @@ func TestServiceGetProductReviews(t *testing.T) {
 			Price:       1400,
 		},
 	})
-	hackerDeskReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	hackerDeskReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "desk",
 		ReviewerID:  "hacker",
 		Score:       5,
 		Title:       "Solid work of art",
 		Description: "I built it with the best wood I could find.",
 	})
-	ironworkerReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	ironworkerReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "desk",
 		ReviewerID:  "ironworker",
 		Score:       4,
 		Title:       "Very Good",
 		Description: "Nice steady study desk, but I bet it'd last much longer with a steel base.",
 	})
-	candlemakerReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	candlemakerReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "desk",
 		ReviewerID:  "candlemaker",
 		Score:       4,
 		Title:       "Perfect",
 		Description: "Good affordable desk. You should spread wax to polish it.",
 	})
-	glazierReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	glazierReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "desk",
 		ReviewerID:  "glazier",
 		Score:       1,
 		Title:       "Excellent, not.",
 		Description: "I prefer desks made out of glass, as I'm jealous of the tailor and the baker.",
 	})
-	hackerChairReviewID := createProductReview(t, serviceWithDB, inventory.CreateProductReviewParams{
+	hackerChairReviewID := createProductReview(t, service, inventory.CreateProductReviewParams{
 		ProductID:   "chair",
 		ReviewerID:  "hacker",
 		Score:       3,
@@ -889,7 +889,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// If tt.mock is nil, use real database implementation if available. Otherwise, skip the test.
-			var s = serviceWithDB
+			var s = service
 			if tt.mock != nil {
 				s = inventory.NewService(tt.mock(t))
 			} else if s == nil {

@@ -19,8 +19,13 @@ import (
 
 // DB handles database communication with PostgreSQL.
 type DB struct {
-	// Postgres database.PGX
-	Postgres *pgxpool.Pool
+	// pool for accessing Postgres database.PGX
+	pool *pgxpool.Pool
+}
+
+// NewDB creates a DB.
+func NewDB(pool *pgxpool.Pool) DB {
+	return DB{pool: pool}
 }
 
 // TransactionContext returns a copy of the parent context which begins a transaction
@@ -28,7 +33,7 @@ type DB struct {
 //
 // Once the transaction is over, you must call db.Commit(ctx) to make the changes effective.
 // This might live in the go-pkg/postgres package later for the sake of code reuse.
-func (db *DB) TransactionContext(ctx context.Context) (context.Context, error) {
+func (db DB) TransactionContext(ctx context.Context) (context.Context, error) {
 	tx, err := db.conn(ctx).Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -37,7 +42,7 @@ func (db *DB) TransactionContext(ctx context.Context) (context.Context, error) {
 }
 
 // Commit transaction from context.
-func (db *DB) Commit(ctx context.Context) error {
+func (db DB) Commit(ctx context.Context) error {
 	if tx, ok := ctx.Value(txCtx{}).(pgx.Tx); ok && tx != nil {
 		return tx.Commit(ctx)
 	}
@@ -45,7 +50,7 @@ func (db *DB) Commit(ctx context.Context) error {
 }
 
 // Rollback transaction from context.
-func (db *DB) Rollback(ctx context.Context) error {
+func (db DB) Rollback(ctx context.Context) error {
 	if tx, ok := ctx.Value(txCtx{}).(pgx.Tx); ok && tx != nil {
 		return tx.Rollback(ctx)
 	}
@@ -61,11 +66,11 @@ func (db *DB) Rollback(ctx context.Context) error {
 // Example:
 // dbCtx := db.WithAcquire(ctx)
 // defer postgres.Release(dbCtx)
-func (db *DB) WithAcquire(ctx context.Context) (dbCtx context.Context, err error) {
+func (db DB) WithAcquire(ctx context.Context) (dbCtx context.Context, err error) {
 	if _, ok := ctx.Value(connCtx{}).(*pgxpool.Conn); ok {
 		panic("context already has a connection acquired")
 	}
-	res, err := db.Postgres.Acquire(ctx)
+	res, err := db.pool.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +78,7 @@ func (db *DB) WithAcquire(ctx context.Context) (dbCtx context.Context, err error
 }
 
 // Release PostgreSQL connection acquired by context back to the pool.
-func (db *DB) Release(ctx context.Context) {
+func (db DB) Release(ctx context.Context) {
 	if res, ok := ctx.Value(connCtx{}).(*pgxpool.Conn); ok && res != nil {
 		res.Release()
 	}
@@ -88,20 +93,20 @@ type connCtx struct{}
 // conn returns a PostgreSQL transaction if one exists.
 // If not, returns a connection if a connection has been acquired by calling WithAcquire.
 // Otherwise, it returns *pgxpool.Pool which acquires the connection and closes it immediately after a SQL command is executed.
-func (db *DB) conn(ctx context.Context) database.PGXQuerier {
+func (db DB) conn(ctx context.Context) database.PGXQuerier {
 	if tx, ok := ctx.Value(txCtx{}).(pgx.Tx); ok && tx != nil {
 		return tx
 	}
 	if res, ok := ctx.Value(connCtx{}).(*pgxpool.Conn); ok && res != nil {
 		return res
 	}
-	return db.Postgres
+	return db.pool
 }
 
 var _ inventory.DB = (*DB)(nil) // Check if methods expected by inventory.DB are implemented correctly.
 
 // CreateProduct creates a new product.
-func (db *DB) CreateProduct(ctx context.Context, params inventory.CreateProductParams) error {
+func (db DB) CreateProduct(ctx context.Context, params inventory.CreateProductParams) error {
 	const sql = `INSERT INTO product ("id", "name", "description", "price") VALUES ($1, $2, $3, $4);`
 	switch _, err := db.conn(ctx).Exec(ctx, sql, params.ID, params.Name, params.Description, params.Price); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
@@ -116,7 +121,7 @@ func (db *DB) CreateProduct(ctx context.Context, params inventory.CreateProductP
 	return nil
 }
 
-func (db *DB) productPgError(err error) error {
+func (db DB) productPgError(err error) error {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
 		return nil
@@ -141,7 +146,7 @@ func (db *DB) productPgError(err error) error {
 var ErrProductNotFound = errors.New("product not found")
 
 // UpdateProduct updates an existing product.
-func (db *DB) UpdateProduct(ctx context.Context, params inventory.UpdateProductParams) error {
+func (db DB) UpdateProduct(ctx context.Context, params inventory.UpdateProductParams) error {
 	const sql = `UPDATE "product" SET
 	"name" = COALESCE($1, "name"),
 	"description" = COALESCE($2, "description"),
@@ -191,7 +196,7 @@ func (p *product) dto() *inventory.Product {
 }
 
 // GetProduct returns a product.
-func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, error) {
+func (db DB) GetProduct(ctx context.Context, id string) (*inventory.Product, error) {
 	var p product
 	// The following pgtools.Wildcard() call returns:
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
@@ -214,7 +219,7 @@ func (db *DB) GetProduct(ctx context.Context, id string) (*inventory.Product, er
 }
 
 // SearchProducts returns a list of products.
-func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProductsParams) (*inventory.SearchProductsResponse, error) {
+func (db DB) SearchProducts(ctx context.Context, params inventory.SearchProductsParams) (*inventory.SearchProductsResponse, error) {
 	var (
 		args = []any{"%" + params.QueryString + "%"}
 		w    = []string{"name LIKE $1"}
@@ -272,7 +277,7 @@ func (db *DB) SearchProducts(ctx context.Context, params inventory.SearchProduct
 }
 
 // DeleteProduct from the database.
-func (db *DB) DeleteProduct(ctx context.Context, id string) error {
+func (db DB) DeleteProduct(ctx context.Context, id string) error {
 	switch _, err := db.conn(ctx).Exec(ctx, `DELETE FROM "product" WHERE "id" = $1`, id); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
@@ -284,7 +289,7 @@ func (db *DB) DeleteProduct(ctx context.Context, id string) error {
 }
 
 // CreateProductReview for a given product.
-func (db *DB) CreateProductReview(ctx context.Context, params inventory.CreateProductReviewDBParams) error {
+func (db DB) CreateProductReview(ctx context.Context, params inventory.CreateProductReviewDBParams) error {
 	const sql = `
 	INSERT INTO review (
 		"id", "product_id", "reviewer_id",
@@ -309,7 +314,7 @@ func (db *DB) CreateProductReview(ctx context.Context, params inventory.CreatePr
 	return nil
 }
 
-func (db *DB) productReviewPgError(err error) error {
+func (db DB) productReviewPgError(err error) error {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
 		return nil
@@ -337,7 +342,7 @@ func (db *DB) productReviewPgError(err error) error {
 var ErrReviewNotFound = errors.New("product review not found")
 
 // UpdateProductReview for a given product.
-func (db *DB) UpdateProductReview(ctx context.Context, params inventory.UpdateProductReviewParams) error {
+func (db DB) UpdateProductReview(ctx context.Context, params inventory.UpdateProductReviewParams) error {
 	const sql = `UPDATE "review" SET
 	"title" = COALESCE($1, "title"),
 	"score" = COALESCE($2, "score"),
@@ -388,7 +393,7 @@ func (r *review) dto() *inventory.ProductReview {
 }
 
 // GetProductReview gets a specific review.
-func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.ProductReview, error) {
+func (db DB) GetProductReview(ctx context.Context, id string) (*inventory.ProductReview, error) {
 	// The following pgtools.Wildcard() call returns:
 	// "id","product_id","reviewer_id","title","description","score","created_at","modified_at"
 	var r review
@@ -411,7 +416,7 @@ func (db *DB) GetProductReview(ctx context.Context, id string) (*inventory.Produ
 }
 
 // GetProductReviews gets reviews for a given product or from a given user.
-func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductReviewsParams) (*inventory.ProductReviewsResponse, error) {
+func (db DB) GetProductReviews(ctx context.Context, params inventory.ProductReviewsParams) (*inventory.ProductReviewsResponse, error) {
 	var (
 		args  []any
 		where []string
@@ -473,7 +478,7 @@ func (db *DB) GetProductReviews(ctx context.Context, params inventory.ProductRev
 }
 
 // DeleteProductReview from the database.
-func (db *DB) DeleteProductReview(ctx context.Context, id string) error {
+func (db DB) DeleteProductReview(ctx context.Context, id string) error {
 	switch _, err := db.conn(ctx).Exec(ctx, `DELETE FROM "review" WHERE id = $1`, id); {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
