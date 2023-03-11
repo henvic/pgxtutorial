@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -19,10 +20,17 @@ import (
 var (
 	httpAddr = flag.String("http", "localhost:8080", "HTTP service address to listen for incoming requests on")
 	grpcAddr = flag.String("grpc", "localhost:8082", "gRPC service address to listen for incoming requests on")
+	version  = flag.Bool("version", false, "Print build info")
 )
 
 func main() {
 	flag.Parse()
+	if *version {
+		info, _ := debug.ReadBuildInfo()
+		fmt.Println(info)
+		os.Exit(2)
+	}
+
 	pgxLogLevel, err := database.LogLevelFromEnv()
 	if err != nil {
 		log.Fatal(err)
