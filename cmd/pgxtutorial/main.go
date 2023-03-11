@@ -33,9 +33,7 @@ func main() {
 	}
 	defer pgPool.Close()
 	s := &api.Server{
-		Inventory: inventory.NewService(&postgres.DB{
-			Postgres: pgPool,
-		}),
+		Inventory:   inventory.NewService(postgres.NewDB(pgPool)),
 		HTTPAddress: *httpAddr,
 		GRPCAddress: *grpcAddr,
 	}
