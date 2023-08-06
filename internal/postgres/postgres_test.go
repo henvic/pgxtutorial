@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
+	"golang.org/x/exp/slog"
 )
 
 var force = flag.Bool("force", false, "Force cleaning the database before starting")
@@ -32,7 +33,7 @@ func TestTransactionContext(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	ctx, err := db.TransactionContext(context.Background())
 	if err != nil {
@@ -53,7 +54,7 @@ func TestTransactionContextCanceled(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	canceledCtx, immediateCancel := context.WithCancel(context.Background())
 	immediateCancel()
@@ -88,7 +89,7 @@ func TestWithAcquire(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	// Reuse the same connection for executing SQL commands.
 	dbCtx, err := db.WithAcquire(context.Background())
@@ -118,7 +119,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 	migration.Teardown(context.Background())
 	if _, err := db.WithAcquire(context.Background()); err == nil {
 		t.Errorf("expected error acquiring pgx connection for context, got nil")
@@ -132,7 +133,7 @@ func TestCreateProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	type args struct {
 		ctx    context.Context
@@ -280,7 +281,7 @@ func TestUpdateProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -471,7 +472,7 @@ func TestGetProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -554,7 +555,7 @@ func TestSearchProducts(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	// On this test, reuse the same connection for executing SQL commands
 	// to check acquiring and releasing a connection passed via context is working as expected.
@@ -773,7 +774,7 @@ func TestDeleteProduct(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -874,7 +875,7 @@ func TestCreateProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1050,7 +1051,7 @@ func TestUpdateProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1308,7 +1309,7 @@ func TestGetProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1432,7 +1433,7 @@ func TestGetProductReviews(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1636,7 +1637,7 @@ func TestDeleteProductReview(t *testing.T) {
 		Files: os.DirFS("../../migrations"),
 	})
 	pool := migration.Setup(context.Background(), "")
-	db := NewDB(pool)
+	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{

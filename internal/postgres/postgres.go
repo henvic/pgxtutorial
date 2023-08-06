@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -15,17 +14,24 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/exp/slog"
 )
 
 // DB handles database communication with PostgreSQL.
 type DB struct {
 	// pool for accessing Postgres database.PGX
 	pool *pgxpool.Pool
+
+	// logger for the operations.
+	logger *slog.Logger
 }
 
 // NewDB creates a DB.
-func NewDB(pool *pgxpool.Pool) DB {
-	return DB{pool: pool}
+func NewDB(pool *pgxpool.Pool, logger *slog.Logger) DB {
+	return DB{
+		pool:   pool,
+		logger: logger,
+	}
 }
 
 // TransactionContext returns a copy of the parent context which begins a transaction
@@ -115,7 +121,7 @@ func (db DB) CreateProduct(ctx context.Context, params inventory.CreateProductPa
 		if sqlErr := db.productPgError(err); sqlErr != nil {
 			return sqlErr
 		}
-		log.Printf("cannot create product on database: %v\n", err)
+		db.logger.Error("cannot create product on database", slog.Any("error", err))
 		return errors.New("cannot create product on database")
 	}
 	return nil
@@ -165,7 +171,7 @@ func (db DB) UpdateProduct(ctx context.Context, params inventory.UpdateProductPa
 		if sqlErr := db.productPgError(err); sqlErr != nil {
 			return sqlErr
 		}
-		log.Printf("cannot update product on database: %v\n", err)
+		db.logger.Error("cannot update product on database", slog.Any("error", err))
 		return errors.New("cannot update product on database")
 	}
 	if ct.RowsAffected() == 0 {
@@ -212,7 +218,10 @@ func (db DB) GetProduct(ctx context.Context, id string) (*inventory.Product, err
 		return nil, nil
 	}
 	if err != nil {
-		log.Printf("cannot get product from database: %v\n", err)
+		db.logger.Error("cannot get product from database",
+			slog.Any("id", id),
+			slog.Any("error", err),
+		)
 		return nil, errors.New("cannot get product from database")
 	}
 	return p.dto(), nil
@@ -243,7 +252,7 @@ func (db DB) SearchProducts(ctx context.Context, params inventory.SearchProducts
 	case err == context.Canceled || err == context.DeadlineExceeded:
 		return nil, err
 	case err != nil:
-		log.Printf("cannot get product count from the database: %v\n", err)
+		db.logger.Error("cannot get product count from the database", slog.Any("error", err))
 		return nil, errors.New("cannot get product")
 	}
 
@@ -267,7 +276,7 @@ func (db DB) SearchProducts(ctx context.Context, params inventory.SearchProducts
 		products, err = pgx.CollectRows(rows, pgx.RowToStructByPos[product])
 	}
 	if err != nil {
-		log.Printf("cannot get products from the database: %v\n", err)
+		db.logger.Error("cannot get products from the database", slog.Any("error", err))
 		return nil, errors.New("cannot get products")
 	}
 	for _, p := range products {
@@ -282,7 +291,7 @@ func (db DB) DeleteProduct(ctx context.Context, id string) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:
-		log.Printf("cannot delete product from database: %v\n", err)
+		db.logger.Error("cannot delete product from database", slog.Any("error", err))
 		return errors.New("cannot delete product from database")
 	}
 	return nil
@@ -308,7 +317,7 @@ func (db DB) CreateProductReview(ctx context.Context, params inventory.CreatePro
 		if sqlErr := db.productReviewPgError(err); sqlErr != nil {
 			return sqlErr
 		}
-		log.Printf("cannot create review on database: %v\n", err)
+		db.logger.Error("cannot create review on database", slog.Any("error", err))
 		return errors.New("cannot create review on database")
 	}
 	return nil
@@ -357,7 +366,7 @@ func (db DB) UpdateProductReview(ctx context.Context, params inventory.UpdatePro
 		if sqlErr := db.productReviewPgError(err); sqlErr != nil {
 			return sqlErr
 		}
-		log.Printf("cannot update review on database: %v\n", err)
+		db.logger.Error("cannot update review on database", slog.Any("error", err))
 		return errors.New("cannot update review on database")
 	default:
 		if ct.RowsAffected() == 0 {
@@ -409,7 +418,9 @@ func (db DB) GetProductReview(ctx context.Context, id string) (*inventory.Produc
 		return nil, nil
 	}
 	if err != nil {
-		log.Printf("cannot get product review from database: %v\n", err)
+		db.logger.Error("cannot get product review from database",
+			slog.Any("id", id),
+			slog.Any("error", err))
 		return nil, errors.New("cannot get product review from database")
 	}
 	return r.dto(), nil
@@ -445,7 +456,7 @@ func (db DB) GetProductReviews(ctx context.Context, params inventory.ProductRevi
 		return nil, err
 	}
 	if err != nil {
-		log.Printf("cannot get reviews count from the database: %v\n", err)
+		db.logger.Error("cannot get reviews count from the database", slog.Any("error", err))
 		return nil, errors.New("cannot get reviews")
 	}
 
@@ -468,7 +479,7 @@ func (db DB) GetProductReviews(ctx context.Context, params inventory.ProductRevi
 		reviews, err = pgx.CollectRows(rows, pgx.RowToStructByPos[review])
 	}
 	if err != nil {
-		log.Printf("cannot get reviews from the database: %v\n", err)
+		db.logger.Error("cannot get reviews from database", slog.Any("error", err))
 		return nil, errors.New("cannot get reviews")
 	}
 	for _, r := range reviews {
@@ -483,7 +494,10 @@ func (db DB) DeleteProductReview(ctx context.Context, id string) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case err != nil:
-		log.Printf("cannot delete review from database: %v\n", err)
+		db.logger.Error("cannot delete review from database",
+			slog.Any("id", id),
+			slog.Any("error", err),
+		)
 		return errors.New("cannot delete review from database")
 	}
 	return nil

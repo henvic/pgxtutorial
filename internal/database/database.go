@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
+	"golang.org/x/exp/slog"
 )
 
 // NewPGXPool is a PostgreSQL connection pool for pgx.
 //
 // Usage:
-// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{}, tracelog.LogLevelInfo)
+// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{Logger: slog.Default()}, tracelog.LogLevelInfo)
 // defer pgPool.Close() // Close any remaining connections before shutting down your application.
 //
 // Instead of passing a configuration explictly with a connString,
@@ -60,15 +60,32 @@ func LogLevelFromEnv() (tracelog.LogLevel, error) {
 
 // PGXStdLogger prints pgx logs to the standard logger.
 // os.Stderr by default.
-type PGXStdLogger struct{}
+type PGXStdLogger struct {
+	Logger *slog.Logger
+}
 
 func (l *PGXStdLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
-	args := make([]any, 0, len(data)+2) // making space for arguments + level + msg
-	args = append(args, level, msg)
+	attrs := make([]slog.Attr, 0, len(data)+1)
+	attrs = append(attrs, slog.String("pgx_level", level.String()))
 	for k, v := range data {
-		args = append(args, fmt.Sprintf("%s=%v", k, v))
+		attrs = append(attrs, slog.Any(k, v))
 	}
-	log.Println(args...)
+	l.Logger.LogAttrs(ctx, slogLevel(level), msg, attrs...)
+}
+
+// slogLevel translates pgx log level to slog log level.
+func slogLevel(level tracelog.LogLevel) slog.Level {
+	switch level {
+	case tracelog.LogLevelTrace, tracelog.LogLevelDebug:
+		return slog.LevelDebug
+	case tracelog.LogLevelInfo:
+		return slog.LevelInfo
+	case tracelog.LogLevelWarn:
+		return slog.LevelWarn
+	default:
+		// If tracelog.LogLevelError, tracelog.LogLevelNone, or any other unknown level, use slog.LevelError.
+		return slog.LevelError
+	}
 }
 
 // PgErrors returns a multi-line error printing more information from *pgconn.PgError to make debugging faster.

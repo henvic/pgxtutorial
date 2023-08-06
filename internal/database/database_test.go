@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
+	"golang.org/x/exp/slog"
 )
 
 func TestMain(m *testing.M) {
@@ -23,7 +24,9 @@ func TestMain(m *testing.M) {
 func TestNewPGXPool(t *testing.T) {
 	t.Parallel()
 
-	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{}, tracelog.LogLevelInfo)
+	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{
+		Logger: slog.Default(),
+	}, tracelog.LogLevelInfo)
 	if err != nil {
 		t.Fatalf("NewPGXPool() error: %v", err)
 	}

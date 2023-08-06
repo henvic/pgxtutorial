@@ -4,23 +4,27 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"net/http"
+	_ "net/http/pprof" // #nosec G108
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
 	"time"
 
+	"github.com/felixge/fgprof"
 	"github.com/henvic/pgxtutorial/internal/api"
 	"github.com/henvic/pgxtutorial/internal/database"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
+	"golang.org/x/exp/slog"
 )
 
 var (
-	httpAddr = flag.String("http", "localhost:8080", "HTTP service address to listen for incoming requests on")
-	grpcAddr = flag.String("grpc", "localhost:8082", "gRPC service address to listen for incoming requests on")
-	version  = flag.Bool("version", false, "Print build info")
+	httpAddr  = flag.String("http", "localhost:8080", "HTTP service address to listen for incoming requests on")
+	grpcAddr  = flag.String("grpc", "localhost:8082", "gRPC service address to listen for incoming requests on")
+	pprofAddr = flag.String("pprof", "localhost:6061", "pprof address")
+	version   = flag.Bool("version", false, "Print build info")
 )
 
 func main() {
@@ -31,19 +35,30 @@ func main() {
 		os.Exit(2)
 	}
 
+	logger := slog.Default()
+
+	// Register fgprof HTTP handler, a sampling Go profiler.
+	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+
 	pgxLogLevel, err := database.LogLevelFromEnv()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("cannot get PGX logging level", slog.Any("error", err))
+		os.Exit(1)
 	}
-	pgPool, err := database.NewPGXPool(context.Background(), "", &database.PGXStdLogger{}, pgxLogLevel)
+	pgPool, err := database.NewPGXPool(context.Background(), "", &database.PGXStdLogger{
+		Logger: logger,
+	}, pgxLogLevel)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("cannot set pgx pool", slog.Any("error", err))
+		os.Exit(1)
 	}
 	defer pgPool.Close()
 	s := &api.Server{
-		Inventory:   inventory.NewService(postgres.NewDB(pgPool)),
-		HTTPAddress: *httpAddr,
-		GRPCAddress: *grpcAddr,
+		Inventory:    inventory.NewService(postgres.NewDB(pgPool, logger)),
+		Logger:       logger,
+		HTTPAddress:  *httpAddr,
+		GRPCAddress:  *grpcAddr,
+		PprofAddress: *pprofAddr,
 	}
 	ec := make(chan error, 1)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -65,6 +80,7 @@ func main() {
 		err = <-ec
 	}
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("application terminated by error", slog.Any("error", err))
+		os.Exit(1)
 	}
 }

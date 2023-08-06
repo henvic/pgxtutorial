@@ -9,6 +9,7 @@ import (
 	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
+	"golang.org/x/exp/slog"
 )
 
 func createProducts(t testing.TB, s *inventory.Service, products []inventory.CreateProductParams) {
@@ -59,7 +60,7 @@ func serviceWithPostgres(t *testing.T) *inventory.Service {
 			TemporaryDatabasePrefix: "test_inventory_pkg", // Avoid a clash between database names of packages on parallel execution.
 			Files:                   os.DirFS("../../migrations"),
 		})
-		db = inventory.NewService(postgres.NewDB(migration.Setup(context.Background(), "")))
+		db = inventory.NewService(postgres.NewDB(migration.Setup(context.Background(), ""), slog.Default()))
 	}
 	return db
 }
