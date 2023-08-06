@@ -17,6 +17,7 @@ import (
 	"github.com/henvic/pgxtutorial/internal/database"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
+	"go.uber.org/automaxprocs/maxprocs"
 	"golang.org/x/exp/slog"
 )
 
@@ -36,6 +37,11 @@ func main() {
 	}
 
 	logger := slog.Default()
+
+	// Set GOMAXPROCS to match Linux container CPU quota.
+	if _, err := maxprocs.Set(maxprocs.Logger(logger.Info)); err != nil {
+		logger.Error("cannot set GOMAXPROCS", slog.Any("error", err))
+	}
 
 	// Register fgprof HTTP handler, a sampling Go profiler.
 	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
