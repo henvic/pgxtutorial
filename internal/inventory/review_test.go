@@ -584,7 +584,7 @@ func TestServiceGetProductReview(t *testing.T) {
 			wantErr: "missing review ID",
 		},
 		{
-			name: "sucess",
+			name: "success",
 			args: args{
 				ctx: context.Background(),
 				id:  firstReviewID,

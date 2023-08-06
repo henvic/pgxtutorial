@@ -18,7 +18,7 @@ import (
 // pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{Logger: slog.Default()}, tracelog.LogLevelInfo)
 // defer pgPool.Close() // Close any remaining connections before shutting down your application.
 //
-// Instead of passing a configuration explictly with a connString,
+// Instead of passing a configuration explicitly with a connString,
 // you might use PG environment variables such as the following to configure the database:
 // PGDATABASE, PGHOST, PGPORT, PGUSER, PGPASSWORD, PGCONNECT_TIMEOUT, etc.
 // Reference: https://www.postgresql.org/docs/current/libpq-envars.html
