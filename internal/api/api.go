@@ -23,7 +23,7 @@ type Server struct {
 	ProbeAddress string
 
 	Inventory *inventory.Service
-	Logger    *slog.Logger
+	Log       *slog.Logger
 
 	grpc  *grpcServer
 	http  *httpServer
@@ -38,14 +38,14 @@ func (s *Server) Run(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	s.grpc = &grpcServer{
 		inventory: s.Inventory,
-		logger:    s.Logger,
+		log:       s.Log,
 	}
 	s.http = &httpServer{
 		inventory: s.Inventory,
-		logger:    s.Logger,
+		log:       s.Log,
 	}
 	s.probe = &probeServer{
-		logger: s.Logger,
+		log: s.Log,
 	}
 
 	go func() {
@@ -104,7 +104,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 
 type httpServer struct {
 	inventory *inventory.Service
-	logger    *slog.Logger
+	log       *slog.Logger
 
 	middleware func(http.Handler) http.Handler
 	http       *http.Server
@@ -112,7 +112,7 @@ type httpServer struct {
 
 // Run HTTP server.
 func (s *httpServer) Run(ctx context.Context, address string) error {
-	handler := NewHTTPServer(s.inventory, s.logger)
+	handler := NewHTTPServer(s.inventory, s.log)
 
 	// Inject middleware, if the middleware field is set.
 	if s.middleware != nil {
@@ -125,7 +125,7 @@ func (s *httpServer) Run(ctx context.Context, address string) error {
 
 		ReadHeaderTimeout: 5 * time.Second, // mitigate risk of Slowloris Attack
 	}
-	s.logger.Info("HTTP server listening", slog.Any("address", address))
+	s.log.Info("HTTP server listening", slog.Any("address", address))
 	if err := s.http.ListenAndServe(); err != http.ErrServerClosed {
 		return err
 	}
@@ -134,10 +134,10 @@ func (s *httpServer) Run(ctx context.Context, address string) error {
 
 // Shutdown HTTP server.
 func (s *httpServer) Shutdown(ctx context.Context) {
-	s.logger.Info("shutting down HTTP server")
+	s.log.Info("shutting down HTTP server")
 	if s.http != nil {
 		if err := s.http.Shutdown(ctx); err != nil {
-			s.logger.Error("graceful shutdown of HTTP server failed", slog.Any("error", err))
+			s.log.Error("graceful shutdown of HTTP server failed", slog.Any("error", err))
 		}
 	}
 }
@@ -145,7 +145,7 @@ func (s *httpServer) Shutdown(ctx context.Context) {
 type grpcServer struct {
 	inventory *inventory.Service
 	grpc      *grpc.Server
-	logger    *slog.Logger
+	log       *slog.Logger
 }
 
 // Run gRPC server.
@@ -160,7 +160,7 @@ func (s *grpcServer) Run(ctx context.Context, address string) error {
 	RegisterInventoryServer(s.grpc, &InventoryGRPC{
 		Inventory: s.inventory,
 	})
-	s.logger.Info("gRPC server listening", slog.Any("address", lis.Addr()))
+	s.log.Info("gRPC server listening", slog.Any("address", lis.Addr()))
 	if err := s.grpc.Serve(lis); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
 	}
@@ -169,7 +169,7 @@ func (s *grpcServer) Run(ctx context.Context, address string) error {
 
 // Shutdown gRPC server.
 func (s *grpcServer) Shutdown(ctx context.Context) {
-	s.logger.Info("shutting down gRPC server")
+	s.log.Info("shutting down gRPC server")
 	done := make(chan struct{}, 1)
 	go func() {
 		if s.grpc != nil {
@@ -183,14 +183,14 @@ func (s *grpcServer) Shutdown(ctx context.Context) {
 		if s.grpc != nil {
 			s.grpc.Stop()
 		}
-		s.logger.Error("graceful shutdown of gRPC server failed")
+		s.log.Error("graceful shutdown of gRPC server failed")
 	}
 }
 
 // probeServer runs an HTTP server exposing pprof endpoints.
 type probeServer struct {
-	http   *http.Server
-	logger *slog.Logger
+	http *http.Server
+	log  *slog.Logger
 }
 
 // Run HTTP pprof server.
@@ -201,7 +201,7 @@ func (s *probeServer) Run(ctx context.Context, address string) error {
 
 		ReadHeaderTimeout: 5 * time.Second, // mitigate risk of Slowloris Attack
 	}
-	s.logger.Info("Probe server listening", slog.Any("address", address))
+	s.log.Info("Probe server listening", slog.Any("address", address))
 	if err := s.http.ListenAndServe(); err != http.ErrServerClosed {
 		return err
 	}
@@ -210,10 +210,10 @@ func (s *probeServer) Run(ctx context.Context, address string) error {
 
 // Shutdown HTTP server.
 func (s *probeServer) Shutdown(ctx context.Context) {
-	s.logger.Info("shutting down pprof server")
+	s.log.Info("shutting down pprof server")
 	if s.http != nil {
 		if err := s.http.Shutdown(ctx); err != nil {
-			s.logger.Error("graceful shutdown of pprof server failed", slog.Any("error", err))
+			s.log.Error("graceful shutdown of pprof server failed", slog.Any("error", err))
 		}
 	}
 }

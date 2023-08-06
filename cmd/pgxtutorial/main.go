@@ -48,7 +48,7 @@ func main() {
 
 	pgxLogLevel, err := database.LogLevelFromEnv()
 	if err != nil {
-		logger.Error("cannot get PGX logging level", slog.Any("error", err))
+		logger.Error("cannot get pgx logging level", slog.Any("error", err))
 		os.Exit(1)
 	}
 	pgPool, err := database.NewPGXPool(context.Background(), "", &database.PGXStdLogger{
@@ -61,7 +61,7 @@ func main() {
 	defer pgPool.Close()
 	s := &api.Server{
 		Inventory:    inventory.NewService(postgres.NewDB(pgPool, logger)),
-		Logger:       logger,
+		Log:          logger,
 		HTTPAddress:  *httpAddr,
 		GRPCAddress:  *grpcAddr,
 		ProbeAddress: *probeAddr,
