@@ -2,13 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	_ "expvar" // #nosec G108
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108
 	"os"
 	"os/signal"
+	"runtime"
 	"runtime/debug"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,8 +22,23 @@ import (
 	"github.com/henvic/pgxtutorial/internal/database"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
-	"golang.org/x/exp/slog"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -26,21 +46,92 @@ var (
 	grpcAddr  = flag.String("grpc", "localhost:8082", "gRPC service address to listen for incoming requests on")
 	probeAddr = flag.String("probe", "localhost:6060", "probe (inspection) HTTP service address")
 	version   = flag.Bool("version", false, "Print build info")
+
+	buildInfo, _ = debug.ReadBuildInfo()
 )
+
+// buildInfoTelemetry for OpenTelemetry.
+func buildInfoTelemetry() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		semconv.ServiceName("api"),
+		semconv.ServiceVersion("1.0.0"),
+		attribute.Key("build.go").String(runtime.Version()),
+	}
+	for _, s := range buildInfo.Settings {
+		switch s.Key {
+		case "vcs.revision", "vcs.time":
+			attrs = append(attrs, attribute.Key("build."+s.Key).String(s.Value))
+		case "vcs.modified":
+			attrs = append(attrs, attribute.Key("build.vcs.modified").Bool(s.Value == "true"))
+		}
+	}
+	return attrs
+}
 
 func main() {
 	flag.Parse()
 	if *version {
-		info, _ := debug.ReadBuildInfo()
-		fmt.Println(info)
+		fmt.Println(buildInfo)
 		os.Exit(2)
 	}
 
-	logger := slog.Default()
+	p := program{
+		log: slog.Default(),
+	}
 
-	// Set GOMAXPROCS to match Linux container CPU quota.
-	if _, err := maxprocs.Set(maxprocs.Logger(logger.Info)); err != nil {
-		logger.Error("cannot set GOMAXPROCS", slog.Any("error", err))
+	haltTelemetry, err := p.telemetry()
+	if err != nil {
+		p.log.Error("cannot initialize telemetry", slog.Any("error", err))
+		os.Exit(1)
+	}
+	// Setting catch-all global OpenTelemetry providers.
+	otel.SetTracerProvider(p.tracer)
+	otel.SetTextMapPropagator(p.propagator)
+	otel.SetMeterProvider(p.meter)
+
+	defer func() {
+		if err != nil {
+			os.Exit(1)
+		}
+	}()
+	defer haltTelemetry()
+
+	_, span := otel.Tracer("main").Start(context.Background(), "main")
+	defer func() {
+		if r := recover(); r != nil {
+			span.RecordError(fmt.Errorf("%v", r))
+			span.SetStatus(codes.Error, "program killed by a panic")
+			span.End()
+			panic(r)
+		}
+
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "program exited with error")
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+		span.End()
+	}()
+
+	if err = p.run(); err != nil {
+		p.log.Error("application terminated by error", slog.Any("error", err))
+	}
+}
+
+type program struct {
+	log        *slog.Logger
+	tracer     trace.TracerProvider
+	propagator propagation.TextMapPropagator
+	meter      metric.MeterProvider
+}
+
+func (p *program) run() error {
+	// Set GOMAXPROCS to match Linux container CPU quota on Linux.
+	if runtime.GOOS == "linux" {
+		if _, err := maxprocs.Set(maxprocs.Logger(p.log.Info)); err != nil {
+			p.log.Error("cannot set GOMAXPROCS", slog.Any("error", err))
+		}
 	}
 
 	// Register fgprof HTTP handler, a sampling Go profiler.
@@ -48,20 +139,24 @@ func main() {
 
 	pgxLogLevel, err := database.LogLevelFromEnv()
 	if err != nil {
-		logger.Error("cannot get pgx logging level", slog.Any("error", err))
+		p.log.Error("cannot get pgx logging level", slog.Any("error", err))
 		os.Exit(1)
 	}
 	pgPool, err := database.NewPGXPool(context.Background(), "", &database.PGXStdLogger{
-		Logger: logger,
-	}, pgxLogLevel)
+		Logger: p.log,
+	}, pgxLogLevel, p.tracer)
 	if err != nil {
-		logger.Error("cannot set pgx pool", slog.Any("error", err))
+		p.log.Error("cannot set pgx pool", slog.Any("error", err))
 		os.Exit(1)
 	}
 	defer pgPool.Close()
+
 	s := &api.Server{
-		Inventory:    inventory.NewService(postgres.NewDB(pgPool, logger)),
-		Log:          logger,
+		Inventory:    inventory.NewService(postgres.NewDB(pgPool, p.log)),
+		Log:          p.log,
+		Tracer:       p.tracer,
+		Meter:        p.meter,
+		Propagator:   p.propagator,
 		HTTPAddress:  *httpAddr,
 		GRPCAddress:  *grpcAddr,
 		ProbeAddress: *probeAddr,
@@ -86,7 +181,75 @@ func main() {
 		err = <-ec
 	}
 	if err != nil {
-		logger.Error("application terminated by error", slog.Any("error", err))
-		os.Exit(1)
+		return fmt.Errorf("application terminated by error: %w", err)
 	}
+	return nil
+}
+
+// telemetry initializes OpenTelemetry tracing and metrics providers.
+func (p *program) telemetry() (halt func(), err error) {
+	p.propagator = propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	var (
+		tr sdktrace.SpanExporter
+		mt sdkmetric.Exporter
+	)
+
+	// OTEL_EXPORTER can be used to configure whether to use the OpenTelemetry gRPC exporter protocol, stdout, or noop.
+	switch exporter, ok := os.LookupEnv("OTEL_EXPORTER"); {
+	case exporter == "stdout":
+		// Tip: Use stdouttrace.WithPrettyPrint() to print spans in human readable format.
+		if tr, err = stdouttrace.New(); err != nil {
+			return nil, fmt.Errorf("stdouttrace: %w", err)
+		}
+		if mt, err = stdoutmetric.New(stdoutmetric.WithEncoder(json.NewEncoder(os.Stdout))); err != nil {
+			return nil, fmt.Errorf("stdoutmetric: %w", err)
+		}
+	case exporter == "otlp":
+		if tr, err = otlptracegrpc.New(context.Background(), otlptracegrpc.WithTLSCredentials(insecure.NewCredentials())); err != nil {
+			return nil, fmt.Errorf("otlptracegrpc: %w", err)
+		}
+
+		if mt, err = otlpmetricgrpc.New(context.Background(), otlpmetricgrpc.WithTLSCredentials(insecure.NewCredentials())); err != nil {
+			return nil, fmt.Errorf("otlpmetricgrpc: %w", err)
+		}
+	case ok:
+		p.log.Warn("unknown OTEL_EXPORTER value")
+		fallthrough
+	default:
+		p.tracer = trace.NewNoopTracerProvider()
+		p.meter = noop.NewMeterProvider()
+		return func() {}, nil
+	}
+
+	res, err := resource.New(context.Background(),
+		resource.WithAttributes(buildInfoTelemetry()...))
+	if err != nil {
+		return nil, fmt.Errorf("cannot initialize tracer resource: %w", err)
+	}
+
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()), sdktrace.WithResource(res), sdktrace.WithBatcher(tr))
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(sdkmetric.NewPeriodicReader(mt)))
+	p.tracer = tp
+	p.meter = mp
+
+	// The following function will be called when the graceful shutdown starts.
+	return func() {
+		haltCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		var w sync.WaitGroup
+		w.Add(2)
+		go func() {
+			defer w.Done()
+			if err := tp.Shutdown(haltCtx); err != nil {
+				p.log.Error("telemetry tracer shutdown", slog.Any("error", err))
+			}
+		}()
+		go func() {
+			defer w.Done()
+			if err := mp.Shutdown(haltCtx); err != nil {
+				p.log.Error("telemetry meter shutdown", slog.Any("error", err))
+			}
+		}()
+		w.Wait()
+	}, nil
 }

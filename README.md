@@ -10,6 +10,7 @@ pgxtutorial uses the following environment variables:
 | - | - |
 | PostgreSQL environment variables | Please check https://www.postgresql.org/docs/current/libpq-envars.html |
 | INTEGRATION_TESTDB | When running go test, database tests will only run if `INTEGRATION_TESTDB=true` |
+| OTEL_EXPORTER | When OTEL_EXPORTER=stdout or OTEL_EXPORTER=otel, telemetry is exported |
 
 ## tl;dr
 To play with it install [Go](https://go.dev/) on your system.

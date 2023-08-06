@@ -3,33 +3,33 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/henvic/pgxtutorial/internal/inventory"
-	"golang.org/x/exp/slog"
+	"github.com/henvic/pgxtutorial/internal/telemetry"
 )
 
-// NewHTTPServer creates an HTTPServer for the API.
-func NewHTTPServer(i *inventory.Service, logger *slog.Logger) http.Handler {
-	s := &HTTPServer{
+// NewHTTPServerAPI creates an HTTPServer for the API.
+func NewHTTPServerAPI(i *inventory.Service, tel telemetry.Provider) http.Handler {
+	s := &HTTPServerAPI{
 		inventory: i,
-		log:       logger,
-		mux:       http.NewServeMux(),
+		tel:       tel,
 	}
-	s.mux.HandleFunc("/product/", s.handleGetProduct)
-	s.mux.HandleFunc("/review/", s.handleGetProductReview)
-	return s.mux
+	mux := http.NewServeMux()
+	mux.HandleFunc("/product/", s.handleGetProduct)
+	mux.HandleFunc("/review/", s.handleGetProductReview)
+	return mux
 }
 
-// HTTPServer exposes inventory.Service via HTTP.
-type HTTPServer struct {
+// HTTPServerAPI exposes inventory.Service via HTTP.
+type HTTPServerAPI struct {
 	inventory *inventory.Service
-	log       *slog.Logger
-	mux       *http.ServeMux
+	tel       telemetry.Provider
 }
 
-func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPServerAPI) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/product/"):]
 	if id == "" || strings.ContainsRune(id, '/') {
 		http.NotFound(w, r)
@@ -41,7 +41,7 @@ func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		s.log.Error("internal server error getting product",
+		s.tel.Logger().Error("internal server error getting product",
 			slog.Any("code", http.StatusInternalServerError),
 			slog.Any("error", err),
 		)
@@ -52,14 +52,14 @@ func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "\t")
 		if err := enc.Encode(review); err != nil {
-			s.log.Info("cannot json encode product request",
+			s.tel.Logger().Info("cannot json encode product request",
 				slog.Any("error", err),
 			)
 		}
 	}
 }
 
-func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPServerAPI) handleGetProductReview(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/review/"):]
 	if id == "" || strings.ContainsRune(id, '/') {
 		http.NotFound(w, r)
@@ -71,7 +71,7 @@ func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Reque
 		return
 	case err != nil:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		s.log.Error("internal server error getting review",
+		s.tel.Logger().Error("internal server error getting review",
 			slog.Any("code", http.StatusInternalServerError),
 			slog.Any("error", err),
 		)
@@ -82,7 +82,7 @@ func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Reque
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "\t")
 		if err := enc.Encode(review); err != nil {
-			s.log.Info("cannot json encode review request",
+			s.tel.Logger().Info("cannot json encode review request",
 				slog.Any("error", err),
 			)
 		}

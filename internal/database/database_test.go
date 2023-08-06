@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"golang.org/x/exp/slog"
 )
 
 func TestMain(m *testing.M) {
@@ -26,7 +26,7 @@ func TestNewPGXPool(t *testing.T) {
 
 	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{
 		Logger: slog.Default(),
-	}, tracelog.LogLevelInfo)
+	}, tracelog.LogLevelInfo, nil)
 	if err != nil {
 		t.Fatalf("NewPGXPool() error: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestNewPGXPoolErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewPGXPool(tt.args.ctx, tt.args.connString, tt.args.logger, tt.args.logLevel)
+			got, err := NewPGXPool(tt.args.ctx, tt.args.connString, tt.args.logger, tt.args.logLevel, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPGXPool() error = %v, wantErr %v", err, tt.wantErr)
 				return
