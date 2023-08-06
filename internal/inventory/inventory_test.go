@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	gomock "github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/henvic/pgxtutorial/internal/inventory"
+	"go.uber.org/mock/gomock"
 )
 
 var force = flag.Bool("force", false, "Force cleaning the database before starting")
