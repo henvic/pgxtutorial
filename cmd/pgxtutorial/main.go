@@ -24,7 +24,7 @@ import (
 var (
 	httpAddr  = flag.String("http", "localhost:8080", "HTTP service address to listen for incoming requests on")
 	grpcAddr  = flag.String("grpc", "localhost:8082", "gRPC service address to listen for incoming requests on")
-	pprofAddr = flag.String("pprof", "localhost:6061", "pprof address")
+	probeAddr = flag.String("probe", "localhost:6060", "probe (inspection) HTTP service address")
 	version   = flag.Bool("version", false, "Print build info")
 )
 
@@ -64,7 +64,7 @@ func main() {
 		Logger:       logger,
 		HTTPAddress:  *httpAddr,
 		GRPCAddress:  *grpcAddr,
-		PprofAddress: *pprofAddr,
+		ProbeAddress: *probeAddr,
 	}
 	ec := make(chan error, 1)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

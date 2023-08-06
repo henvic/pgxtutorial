@@ -20,14 +20,14 @@ import (
 type Server struct {
 	HTTPAddress  string
 	GRPCAddress  string
-	PprofAddress string
+	ProbeAddress string
 
 	Inventory *inventory.Service
 	Logger    *slog.Logger
 
 	grpc  *grpcServer
 	http  *httpServer
-	pprof *pprofServer
+	probe *probeServer
 
 	stopFn sync.Once
 }
@@ -44,7 +44,7 @@ func (s *Server) Run(ctx context.Context) (err error) {
 		inventory: s.Inventory,
 		logger:    s.Logger,
 	}
-	s.pprof = &pprofServer{
+	s.probe = &probeServer{
 		logger: s.Logger,
 	}
 
@@ -63,9 +63,9 @@ func (s *Server) Run(ctx context.Context) (err error) {
 		ec <- err
 	}()
 	go func() {
-		err := s.pprof.Run(ctx, s.PprofAddress)
+		err := s.probe.Run(ctx, s.ProbeAddress)
 		if err != nil {
-			err = fmt.Errorf("pprof server error: %w", err)
+			err = fmt.Errorf("Probe server error: %w", err)
 		}
 		ec <- err
 	}()
@@ -98,7 +98,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 	s.stopFn.Do(func() {
 		s.http.Shutdown(ctx)
 		s.grpc.Shutdown(ctx)
-		s.pprof.Shutdown(ctx)
+		s.probe.Shutdown(ctx)
 	})
 }
 
@@ -187,21 +187,21 @@ func (s *grpcServer) Shutdown(ctx context.Context) {
 	}
 }
 
-// pprofServer runs an HTTP server exposing pprof endpoints.
-type pprofServer struct {
+// probeServer runs an HTTP server exposing pprof endpoints.
+type probeServer struct {
 	http   *http.Server
 	logger *slog.Logger
 }
 
 // Run HTTP pprof server.
-func (s *pprofServer) Run(ctx context.Context, address string) error {
+func (s *probeServer) Run(ctx context.Context, address string) error {
 	// Use http.DefaultServeMux, rather than defining a custom mux.
 	s.http = &http.Server{
 		Addr: address,
 
 		ReadHeaderTimeout: 5 * time.Second, // mitigate risk of Slowloris Attack
 	}
-	s.logger.Info("pprof server listening", slog.Any("address", address))
+	s.logger.Info("Probe server listening", slog.Any("address", address))
 	if err := s.http.ListenAndServe(); err != http.ErrServerClosed {
 		return err
 	}
@@ -209,7 +209,7 @@ func (s *pprofServer) Run(ctx context.Context, address string) error {
 }
 
 // Shutdown HTTP server.
-func (s *pprofServer) Shutdown(ctx context.Context) {
+func (s *probeServer) Shutdown(ctx context.Context) {
 	s.logger.Info("shutting down pprof server")
 	if s.http != nil {
 		if err := s.http.Shutdown(ctx); err != nil {
