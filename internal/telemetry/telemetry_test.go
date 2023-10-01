@@ -2,15 +2,15 @@ package telemetry
 
 import (
 	"encoding/json"
-	"log/slog"
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/slog"
 )
 
 func meterProvider(t testing.TB) metric.MeterProvider {
@@ -27,10 +27,11 @@ func TestNewProvider(t *testing.T) {
 	logger := slog.Default()
 	tracer := trace.NewNoopTracerProvider()
 	meter := meterProvider(t)
-	propagator := propagation.NewCompositeTextMapPropagator()
 
 	// Test creating a new provider
-	provider := NewProvider(logger, tracer.Tracer("example"), meter.Meter("example"), propagator)
+	provider, err := NewProvider(logger)
+	require.NoError(t, err)
+	require.NotNil(t, provider)
 
 	// Test Logger method
 	if provider.Logger() != logger {
@@ -38,12 +39,12 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	// Test Tracer method
-	if provider.Tracer() != tracer.Tracer("example") {
+	if provider.Tracer("example") != tracer.Tracer("example") {
 		t.Errorf("Expected Tracer() to return the correct tracer")
 	}
 
 	// Test Meter method
-	if provider.Meter() != meter.Meter("example") {
+	if provider.Meter("example") != meter.Meter("example") {
 		t.Errorf("Expected Meter() to return the correct meter")
 	}
 

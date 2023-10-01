@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"log"
-	"log/slog"
+
 	"os"
 	"testing"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
+	"golang.org/x/exp/slog"
 )
 
 func TestMain(m *testing.M) {

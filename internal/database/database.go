@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
+
 	"os"
 
 	"github.com/exaring/otelpgx"
@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/slog"
 )
 
 // NewPGXPool is a PostgreSQL connection pool for pgx.

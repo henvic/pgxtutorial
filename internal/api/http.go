@@ -3,16 +3,17 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
+
 	"net/http"
 	"strings"
 
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/telemetry"
+	"golang.org/x/exp/slog"
 )
 
 // NewHTTPServerAPI creates an HTTPServer for the API.
-func NewHTTPServerAPI(i *inventory.Service, tel telemetry.Provider) http.Handler {
+func NewHTTPServerAPI(i *inventory.Service, tel *telemetry.Provider) http.Handler {
 	s := &HTTPServerAPI{
 		inventory: i,
 		tel:       tel,
@@ -26,7 +27,7 @@ func NewHTTPServerAPI(i *inventory.Service, tel telemetry.Provider) http.Handler
 // HTTPServerAPI exposes inventory.Service via HTTP.
 type HTTPServerAPI struct {
 	inventory *inventory.Service
-	tel       telemetry.Provider
+	tel       *telemetry.Provider
 }
 
 func (s *HTTPServerAPI) handleGetProduct(w http.ResponseWriter, r *http.Request) {
