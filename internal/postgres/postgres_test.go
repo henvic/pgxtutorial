@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
-	"log/slog"
+
 	"os"
 	"testing"
 	"time"
@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
+	"golang.org/x/exp/slog"
 )
 
 var force = flag.Bool("force", false, "Force cleaning the database before starting")

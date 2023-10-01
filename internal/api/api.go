@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
+
 	"net"
 	"net/http"
 	"strings"
@@ -15,9 +15,7 @@ import (
 	"github.com/henvic/pgxtutorial/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -27,19 +25,13 @@ type Server struct {
 	HTTPAddress  string
 	GRPCAddress  string
 	ProbeAddress string
-
-	Log        *slog.Logger
-	Tracer     trace.TracerProvider
-	Meter      metric.MeterProvider
-	Propagator propagation.TextMapPropagator
-
-	Inventory *inventory.Service
-
-	grpc  *grpcServer
-	http  *httpServer
-	probe *probeServer
-
-	stopFn sync.Once
+	Log          *slog.Logger
+	Inventory    *inventory.Service
+	grpc         *grpcServer
+	http         *httpServer
+	probe        *probeServer
+	Telemetry    *telemetry.Provider
+	stopFn       sync.Once
 }
 
 // Run starts the HTTP and gRPC servers.
@@ -47,36 +39,51 @@ func (s *Server) Run(ctx context.Context) (err error) {
 	var ec = make(chan error, 3) // gRPC, HTTP, debug servers
 	ctx, cancel := context.WithCancel(ctx)
 
-	tel := telemetry.NewProvider(
-		s.Log,
-		s.Tracer.Tracer("api"),
-		s.Meter.Meter("api"),
-		s.Propagator)
+	// s.Telemetry.Tracer("api")
+	// s.Telemetry.Meter("api")
 
 	s.grpc = &grpcServer{
 		inventory: s.Inventory,
-		tel:       *tel,
+		tel:       s.Telemetry,
 	}
 	s.http = &httpServer{
 		inventory: s.Inventory,
-		tel:       *tel,
+		tel:       s.Telemetry,
 	}
 	s.probe = &probeServer{
-		tel: *tel,
+		tel: s.Telemetry,
 	}
 
 	go func() {
-		err := s.grpc.Run(ctx, s.GRPCAddress, otelgrpc.WithMeterProvider(s.Meter), otelgrpc.WithTracerProvider(s.Tracer), otelgrpc.WithPropagators(s.Propagator))
+		err := s.grpc.Run(
+			ctx,
+			s.GRPCAddress,
+			otelgrpc.WithMeterProvider(
+				s.Telemetry.MeterProvider,
+			),
+			otelgrpc.WithTracerProvider(s.Telemetry.TraceProvider),
+			otelgrpc.WithPropagators(s.Telemetry.Propagator()),
+		)
+
 		if err != nil {
 			err = fmt.Errorf("gRPC server error: %w", err)
 		}
+
 		ec <- err
 	}()
 	go func() {
-		err := s.http.Run(ctx, s.HTTPAddress, otelhttp.WithMeterProvider(s.Meter), otelhttp.WithTracerProvider(s.Tracer), otelhttp.WithPropagators(s.Propagator))
+		err := s.http.Run(
+			ctx,
+			s.HTTPAddress,
+			otelhttp.WithMeterProvider(s.Telemetry.MeterProvider),
+			otelhttp.WithTracerProvider(s.Telemetry.TraceProvider),
+			otelhttp.WithPropagators(s.Telemetry.Propagator()),
+		)
+
 		if err != nil {
 			err = fmt.Errorf("HTTP server error: %w", err)
 		}
+
 		ec <- err
 	}()
 	go func() {
@@ -121,7 +128,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 
 type httpServer struct {
 	inventory *inventory.Service
-	tel       telemetry.Provider
+	tel       *telemetry.Provider
 
 	middleware func(http.Handler) http.Handler
 	http       *http.Server
@@ -162,7 +169,7 @@ func (s *httpServer) Shutdown(ctx context.Context) {
 type grpcServer struct {
 	inventory *inventory.Service
 	grpc      *grpc.Server
-	tel       telemetry.Provider
+	tel       *telemetry.Provider
 }
 
 // Run gRPC server.
@@ -210,7 +217,7 @@ func (s *grpcServer) Shutdown(ctx context.Context) {
 // probeServer runs an HTTP server exposing pprof endpoints.
 type probeServer struct {
 	http *http.Server
-	tel  telemetry.Provider
+	tel  *telemetry.Provider
 }
 
 // Run HTTP pprof server.

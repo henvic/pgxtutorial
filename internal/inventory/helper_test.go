@@ -2,7 +2,7 @@ package inventory_test
 
 import (
 	"context"
-	"log/slog"
+
 	"os"
 	"testing"
 	"time"
@@ -10,6 +10,7 @@ import (
 	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/postgres"
+	"golang.org/x/exp/slog"
 )
 
 func createProducts(t testing.TB, s *inventory.Service, products []inventory.CreateProductParams) {
