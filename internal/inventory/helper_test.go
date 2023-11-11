@@ -51,6 +51,7 @@ func newString(s string) *string {
 // serviceWithPostgres returns a new inventory.Service backed by a postgres.DB, if available.
 // Otherwise, it returns nil.
 func serviceWithPostgres(t *testing.T) *inventory.Service {
+	t.Helper()
 	var db *inventory.Service
 	// Initialize migration and infrastructure for running tests that uses a real implementation of PostgreSQL
 	// if the INTEGRATION_TESTDB environment variable is set to true.
