@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strings"
 	sync "sync"
 	"time"
 
@@ -88,10 +87,10 @@ func (s *Server) Run(ctx context.Context) (err error) {
 	}()
 
 	// Wait for the services to exit.
-	var es []string
+	var es []error
 	for i := 0; i < cap(ec); i++ {
 		if err := <-ec; err != nil {
-			es = append(es, err.Error())
+			es = append(es, err)
 			// If one of the services returns by a reason other than parent context canceled,
 			// try to gracefully shutdown the other services to shutdown everything,
 			// with the goal of replacing this service with a new healthy one.
@@ -102,11 +101,8 @@ func (s *Server) Run(ctx context.Context) (err error) {
 			}
 		}
 	}
-	if len(es) > 0 {
-		err = errors.New(strings.Join(es, ", "))
-	}
 	cancel()
-	return err
+	return errors.Join(es...)
 }
 
 // Shutdown HTTP and gRPC servers.
@@ -173,8 +169,7 @@ func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Opt
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 	s.grpc = grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(oo...)),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(oo...)),
+		grpc.StatsHandler(otelgrpc.NewServerHandler(oo...)),
 	)
 	reflection.Register(s.grpc)
 	RegisterInventoryServer(s.grpc, &InventoryGRPC{
