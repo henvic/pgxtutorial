@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 )
 
 func meterProvider(t testing.TB) metric.MeterProvider {
@@ -25,7 +25,7 @@ func meterProvider(t testing.TB) metric.MeterProvider {
 
 func TestNewProvider(t *testing.T) {
 	logger := slog.Default()
-	tracer := trace.NewNoopTracerProvider()
+	tracer := tracenoop.NewTracerProvider()
 	meter := meterProvider(t)
 	propagator := propagation.NewCompositeTextMapPropagator()
 

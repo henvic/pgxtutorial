@@ -37,6 +37,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/automaxprocs/maxprocs"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -216,7 +217,8 @@ func (p *program) telemetry() (halt func(), err error) {
 		p.log.Warn("unknown OTEL_EXPORTER value")
 		fallthrough
 	default:
-		p.tracer = trace.NewNoopTracerProvider()
+		p.tracer = tracenoop.NewTracerProvider()
+
 		p.meter = noop.NewMeterProvider()
 		return func() {}, nil
 	}
