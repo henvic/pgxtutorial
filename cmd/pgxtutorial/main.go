@@ -89,6 +89,9 @@ func main() {
 	otel.SetTracerProvider(p.tracer)
 	otel.SetTextMapPropagator(p.propagator)
 	otel.SetMeterProvider(p.meter)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		p.log.Error("irremediable OpenTelemetry event", slog.Any("error", err))
+	}))
 
 	defer func() {
 		if err != nil {
@@ -100,7 +103,8 @@ func main() {
 	_, span := otel.Tracer("main").Start(context.Background(), "main")
 	defer func() {
 		if r := recover(); r != nil {
-			span.RecordError(fmt.Errorf("%v", r))
+			span.RecordError(fmt.Errorf("%v", r),
+				trace.WithAttributes(attribute.String("stack_trace", string(debug.Stack()))))
 			span.SetStatus(codes.Error, "program killed by a panic")
 			span.End()
 			panic(r)
