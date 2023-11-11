@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -158,6 +160,7 @@ func (s *httpServer) Shutdown(ctx context.Context) {
 type grpcServer struct {
 	inventory *inventory.Service
 	grpc      *grpc.Server
+	health    *health.Server
 	tel       telemetry.Provider
 }
 
@@ -172,9 +175,12 @@ func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Opt
 		grpc.StatsHandler(otelgrpc.NewServerHandler(oo...)),
 	)
 	reflection.Register(s.grpc)
+	s.health = health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s.grpc, s.health)
 	RegisterInventoryServer(s.grpc, &InventoryGRPC{
 		Inventory: s.inventory,
 	})
+	s.health.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	s.tel.Logger().Info("gRPC server listening", slog.Any("address", lis.Addr()))
 	if err := s.grpc.Serve(lis); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
@@ -185,6 +191,7 @@ func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Opt
 // Shutdown gRPC server.
 func (s *grpcServer) Shutdown(ctx context.Context) {
 	s.tel.Logger().Info("shutting down gRPC server")
+	s.health.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	done := make(chan struct{}, 1)
 	go func() {
 		if s.grpc != nil {
