@@ -27,7 +27,10 @@ func TestNewProvider(t *testing.T) {
 	logger := slog.Default()
 	tracer := tracenoop.NewTracerProvider()
 	meter := meterProvider(t)
-	propagator := propagation.NewCompositeTextMapPropagator()
+	propagator := propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
 
 	// Test creating a new provider
 	provider := NewProvider(logger, tracer.Tracer("example"), meter.Meter("example"), propagator)
