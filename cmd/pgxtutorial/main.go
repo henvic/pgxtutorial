@@ -144,15 +144,13 @@ func (p *program) run() error {
 
 	pgxLogLevel, err := database.LogLevelFromEnv()
 	if err != nil {
-		p.log.Error("cannot get pgx logging level", slog.Any("error", err))
-		os.Exit(1)
+		return fmt.Errorf("cannot get pgx logging level: %w", err)
 	}
 	pgPool, err := database.NewPGXPool(context.Background(), "", &database.PGXStdLogger{
 		Logger: p.log,
 	}, pgxLogLevel, p.tracer)
 	if err != nil {
-		p.log.Error("cannot set pgx pool", slog.Any("error", err))
-		os.Exit(1)
+		return fmt.Errorf("cannot create pgx pool: %w", err)
 	}
 	defer pgPool.Close()
 
