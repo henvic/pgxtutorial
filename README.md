@@ -41,3 +41,4 @@ $ go run ./cmd/pgxtutorial
 
 ## See also
 * [pgtools](https://github.com/henvic/pgtools/)
+* [pgq](https://github.com/henvic/pgq)
