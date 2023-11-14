@@ -260,7 +260,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "invalid_review_score",
-					Score: newInt(-5),
+					Score: ptr(-5),
 				},
 			},
 			wantErr: "invalid score",
@@ -271,7 +271,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "no_product_review_title",
-					Title: newString(""),
+					Title: ptr(""),
 				},
 			},
 			wantErr: "missing review title",
@@ -282,7 +282,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "no_product_review_desc",
-					Description: newString(""),
+					Description: ptr(""),
 				},
 			},
 			wantErr: "missing review description",
@@ -293,7 +293,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "World",
-					Title: newString("Earth"),
+					Title: ptr("Earth"),
 				},
 			},
 			wantErr: "product review not found",
@@ -304,7 +304,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: canceledContext(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "product_review",
-					Title: newString("Earth"),
+					Title: ptr("Earth"),
 				},
 			},
 			wantErr: "context canceled",
@@ -315,7 +315,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: deadlineExceededContext(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "product_review",
-					Title: newString("Earth"),
+					Title: ptr("Earth"),
 				},
 			},
 			wantErr: "context deadline exceeded",
@@ -336,9 +336,9 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          firstReviewID,
-					Score:       newInt(3),
-					Title:       newString("updated title"),
-					Description: newString("updated desc"),
+					Score:       ptr(3),
+					Title:       ptr("updated title"),
+					Description: ptr("updated desc"),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -355,7 +355,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    secondReviewID,
-					Score: newInt(5),
+					Score: ptr(5),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -374,8 +374,8 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				m.EXPECT().UpdateProductReview(gomock.Not(gomock.Nil()),
 					inventory.UpdateProductReviewParams{
 						ID:          "simple",
-						Title:       newString("product review title"),
-						Description: newString("product review description"),
+						Title:       ptr("product review title"),
+						Description: ptr("product review description"),
 					}).Return(errors.New("unexpected error"))
 				return m
 			},
@@ -383,8 +383,8 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "simple",
-					Title:       newString("product review title"),
-					Description: newString("product review description"),
+					Title:       ptr("product review title"),
+					Description: ptr("product review description"),
 				},
 			},
 			wantErr: "unexpected error",

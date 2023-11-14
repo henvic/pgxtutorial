@@ -222,9 +222,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "no_product_name",
-					Name:        newString(""),
-					Description: newString("product description"),
-					Price:       newInt(150),
+					Name:        ptr(""),
+					Description: ptr("product description"),
+					Price:       ptr(150),
 				},
 			},
 			wantErr: "missing product name",
@@ -235,9 +235,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "no_product_description",
-					Name:        newString("product name"),
-					Description: newString(""),
-					Price:       newInt(150),
+					Name:        ptr("product name"),
+					Description: ptr(""),
+					Price:       ptr(150),
 				},
 			},
 			wantErr: "missing product description",
@@ -248,9 +248,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "negative_price",
-					Name:        newString("product name"),
-					Description: newString("product description"),
-					Price:       newInt(-5),
+					Name:        ptr("product name"),
+					Description: ptr("product description"),
+					Price:       ptr(-5),
 				},
 			},
 			wantErr: "price cannot be negative",
@@ -261,7 +261,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString("A new name"),
+					Name: ptr("A new name"),
 				},
 			},
 			want: &inventory.Product{
@@ -277,7 +277,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
-					Description: newString("A new description"),
+					Description: ptr("A new description"),
 				},
 			},
 			want: &inventory.Product{
@@ -293,9 +293,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
-					Name:        newString("Even another name"),
-					Description: newString("yet another description"),
-					Price:       newInt(400),
+					Name:        ptr("Even another name"),
+					Description: ptr("yet another description"),
+					Price:       ptr(400),
 				},
 			},
 			want: &inventory.Product{
@@ -311,7 +311,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "World",
-					Name: newString("Earth"),
+					Name: ptr("Earth"),
 				},
 			},
 			wantErr: "product not found",
@@ -322,7 +322,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString(""),
+					Name: ptr(""),
 				},
 			},
 			wantErr: "missing product name",
@@ -333,7 +333,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: canceledContext(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString("Earth"),
+					Name: ptr("Earth"),
 				},
 			},
 			wantErr: "context canceled",
@@ -344,7 +344,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: deadlineExceededContext(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString("Earth"),
+					Name: ptr("Earth"),
 				},
 			},
 			wantErr: "context deadline exceeded",
@@ -355,7 +355,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:    "another",
-					Price: newInt(97),
+					Price: ptr(97),
 				},
 			},
 			want: &inventory.Product{
@@ -383,9 +383,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				m.EXPECT().UpdateProduct(gomock.Not(gomock.Nil()),
 					inventory.UpdateProductParams{
 						ID:          "simple",
-						Name:        newString("product name"),
-						Description: newString("product description"),
-						Price:       newInt(150),
+						Name:        ptr("product name"),
+						Description: ptr("product description"),
+						Price:       ptr(150),
 					}).Return(errors.New("unexpected error"))
 				return m
 			},
@@ -393,9 +393,9 @@ func TestServiceUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "simple",
-					Name:        newString("product name"),
-					Description: newString("product description"),
-					Price:       newInt(150),
+					Name:        ptr("product name"),
+					Description: ptr("product description"),
+					Price:       ptr(150),
 				},
 			},
 			wantErr: "unexpected error",

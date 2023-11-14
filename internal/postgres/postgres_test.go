@@ -321,7 +321,7 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString("A new name"),
+					Name: ptr("A new name"),
 				},
 			},
 			want: &inventory.Product{
@@ -337,7 +337,7 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
-					Description: newString("A new description"),
+					Description: ptr("A new description"),
 				},
 			},
 			want: &inventory.Product{
@@ -353,9 +353,9 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
-					Name:        newString("Even another name"),
-					Description: newString("yet another description"),
-					Price:       newInt(400),
+					Name:        ptr("Even another name"),
+					Description: ptr("yet another description"),
+					Price:       ptr(400),
 				},
 			},
 			want: &inventory.Product{
@@ -371,7 +371,7 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "World",
-					Name: newString("Earth"),
+					Name: ptr("Earth"),
 				},
 			},
 			wantErr: "product not found",
@@ -382,7 +382,7 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
-					Name: newString(""),
+					Name: ptr(""),
 				},
 			},
 			wantErr: "invalid product name",
@@ -407,7 +407,7 @@ func TestUpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductParams{
 					ID:    "another",
-					Price: newInt(97),
+					Price: ptr(97),
 				},
 			},
 			want: &inventory.Product{
@@ -1137,7 +1137,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
-					Score: newInt(5),
+					Score: ptr(5),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -1155,7 +1155,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
-					Score: newInt(542),
+					Score: ptr(542),
 				},
 			},
 			wantErr: "invalid score",
@@ -1166,7 +1166,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_title",
-					Title: newString("my review is really good"),
+					Title: ptr("my review is really good"),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -1184,7 +1184,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
-					Title: newString(""),
+					Title: ptr(""),
 				},
 			},
 			wantErr: "invalid title",
@@ -1195,7 +1195,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "review_update_desc",
-					Description: newString("this is a string, right?"),
+					Description: ptr("this is a string, right?"),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -1213,9 +1213,9 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "review_update_multiple",
-					Score:       newInt(5),
-					Title:       newString("hello, world"),
-					Description: newString("abc"),
+					Score:       ptr(5),
+					Title:       ptr("hello, world"),
+					Description: ptr("abc"),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -1233,7 +1233,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "World",
-					Title: newString("Earth"),
+					Title: ptr("Earth"),
 				},
 			},
 			wantErr: "product review not found",

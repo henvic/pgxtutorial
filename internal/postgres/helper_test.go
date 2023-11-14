@@ -36,10 +36,7 @@ func deadlineExceededContext() context.Context {
 	return ctx
 }
 
-func newInt(n int) *int {
-	return &n
-}
-
-func newString(s string) *string {
-	return &s
+// ptr returns a pointer to the given value.
+func ptr[T any](v T) *T {
+	return &v
 }
