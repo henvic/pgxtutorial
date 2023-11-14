@@ -1,11 +1,13 @@
 name: Lint
 
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-  push:
-    branches:
-      - main
+    # The branches below must be a subset of the branches above
+    branches: [ "main" ]
+
 jobs:
 
   lint:
