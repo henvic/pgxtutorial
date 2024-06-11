@@ -10,6 +10,7 @@ import (
 	sync "sync"
 	"time"
 
+	"github.com/henvic/pgxtutorial/internal/apiv1/apipb"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"github.com/henvic/pgxtutorial/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -177,7 +178,7 @@ func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Opt
 	reflection.Register(s.grpc)
 	s.health = health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s.grpc, s.health)
-	RegisterInventoryServer(s.grpc, &InventoryGRPC{
+	apipb.RegisterInventoryServer(s.grpc, &InventoryGRPC{
 		Inventory: s.inventory,
 	})
 	s.health.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)

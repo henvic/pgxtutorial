@@ -4,21 +4,19 @@ import (
 	"context"
 	"errors"
 
+	"github.com/henvic/pgxtutorial/internal/apiv1/apipb"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 )
 
-// Generate gRPC server:
-//go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api.proto
-
 // InventoryGRPC services.
 type InventoryGRPC struct {
-	UnimplementedInventoryServer
+	apipb.UnimplementedInventoryServer
 	Inventory *inventory.Service
 }
 
-func (i *InventoryGRPC) SearchProducts(ctx context.Context, req *SearchProductsRequest) (*SearchProductsResponse, error) {
+func (i *InventoryGRPC) SearchProducts(ctx context.Context, req *apipb.SearchProductsRequest) (*apipb.SearchProductsResponse, error) {
 	params := inventory.SearchProductsParams{
 		QueryString: req.QueryString,
 	}
@@ -41,23 +39,23 @@ func (i *InventoryGRPC) SearchProducts(ctx context.Context, req *SearchProductsR
 		return nil, grpcAPIError(err)
 	}
 
-	items := []*Product{}
+	items := []*apipb.Product{}
 	for _, p := range products.Items {
-		items = append(items, &Product{
+		items = append(items, &apipb.Product{
 			Id:          p.ID,
 			Price:       int64(p.Price),
 			Name:        p.Name,
 			Description: p.Description,
 		})
 	}
-	return &SearchProductsResponse{
+	return &apipb.SearchProductsResponse{
 		Total: int32(products.Total),
 		Items: items,
 	}, nil
 }
 
 // CreateProduct on the inventory.
-func (i *InventoryGRPC) CreateProduct(ctx context.Context, req *CreateProductRequest) (*CreateProductResponse, error) {
+func (i *InventoryGRPC) CreateProduct(ctx context.Context, req *apipb.CreateProductRequest) (*apipb.CreateProductResponse, error) {
 	if err := i.Inventory.CreateProduct(ctx, inventory.CreateProductParams{
 		ID:          req.Id,
 		Name:        req.Name,
@@ -66,11 +64,11 @@ func (i *InventoryGRPC) CreateProduct(ctx context.Context, req *CreateProductReq
 	}); err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &CreateProductResponse{}, nil
+	return &apipb.CreateProductResponse{}, nil
 }
 
 // UpdateProduct on the inventory.
-func (i *InventoryGRPC) UpdateProduct(ctx context.Context, req *UpdateProductRequest) (*UpdateProductResponse, error) {
+func (i *InventoryGRPC) UpdateProduct(ctx context.Context, req *apipb.UpdateProductRequest) (*apipb.UpdateProductResponse, error) {
 	params := inventory.UpdateProductParams{
 		ID:          req.Id,
 		Name:        req.Name,
@@ -83,19 +81,19 @@ func (i *InventoryGRPC) UpdateProduct(ctx context.Context, req *UpdateProductReq
 	if err := i.Inventory.UpdateProduct(ctx, params); err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &UpdateProductResponse{}, nil
+	return &apipb.UpdateProductResponse{}, nil
 }
 
 // DeleteProduct on the inventory.
-func (i *InventoryGRPC) DeleteProduct(ctx context.Context, req *DeleteProductRequest) (*DeleteProductResponse, error) {
+func (i *InventoryGRPC) DeleteProduct(ctx context.Context, req *apipb.DeleteProductRequest) (*apipb.DeleteProductResponse, error) {
 	if err := i.Inventory.DeleteProduct(ctx, req.Id); err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &DeleteProductResponse{}, nil
+	return &apipb.DeleteProductResponse{}, nil
 }
 
 // GetProduct on the inventory.
-func (i *InventoryGRPC) GetProduct(ctx context.Context, req *GetProductRequest) (*GetProductResponse, error) {
+func (i *InventoryGRPC) GetProduct(ctx context.Context, req *apipb.GetProductRequest) (*apipb.GetProductResponse, error) {
 	product, err := i.Inventory.GetProduct(ctx, req.Id)
 	if err != nil {
 		return nil, grpcAPIError(err)
@@ -103,7 +101,7 @@ func (i *InventoryGRPC) GetProduct(ctx context.Context, req *GetProductRequest) 
 	if product == nil {
 		return nil, status.Error(codes.NotFound, "product not found")
 	}
-	return &GetProductResponse{
+	return &apipb.GetProductResponse{
 		Id:          product.ID,
 		Price:       int64(product.Price),
 		Name:        product.Name,
@@ -114,7 +112,7 @@ func (i *InventoryGRPC) GetProduct(ctx context.Context, req *GetProductRequest) 
 }
 
 // CreateProductReview on the inventory.
-func (i *InventoryGRPC) CreateProductReview(ctx context.Context, req *CreateProductReviewRequest) (*CreateProductReviewResponse, error) {
+func (i *InventoryGRPC) CreateProductReview(ctx context.Context, req *apipb.CreateProductReviewRequest) (*apipb.CreateProductReviewResponse, error) {
 	id, err := i.Inventory.CreateProductReview(ctx, inventory.CreateProductReviewParams{
 		ProductID:   req.ProductId,
 		ReviewerID:  req.ReviewerId,
@@ -125,12 +123,12 @@ func (i *InventoryGRPC) CreateProductReview(ctx context.Context, req *CreateProd
 	if err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &CreateProductReviewResponse{
+	return &apipb.CreateProductReviewResponse{
 		Id: id,
 	}, nil
 }
 
-func (i *InventoryGRPC) UpdateProductReview(ctx context.Context, req *UpdateProductReviewRequest) (*UpdateProductReviewResponse, error) {
+func (i *InventoryGRPC) UpdateProductReview(ctx context.Context, req *apipb.UpdateProductReviewRequest) (*apipb.UpdateProductReviewResponse, error) {
 	params := inventory.UpdateProductReviewParams{
 		ID:          req.Id,
 		Title:       req.Title,
@@ -143,17 +141,17 @@ func (i *InventoryGRPC) UpdateProductReview(ctx context.Context, req *UpdateProd
 	if err := i.Inventory.UpdateProductReview(ctx, params); err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &UpdateProductReviewResponse{}, nil
+	return &apipb.UpdateProductReviewResponse{}, nil
 }
 
-func (i *InventoryGRPC) DeleteProductReview(ctx context.Context, req *DeleteProductReviewRequest) (*DeleteProductReviewResponse, error) {
+func (i *InventoryGRPC) DeleteProductReview(ctx context.Context, req *apipb.DeleteProductReviewRequest) (*apipb.DeleteProductReviewResponse, error) {
 	if err := i.Inventory.DeleteProductReview(ctx, req.Id); err != nil {
 		return nil, grpcAPIError(err)
 	}
-	return &DeleteProductReviewResponse{}, nil
+	return &apipb.DeleteProductReviewResponse{}, nil
 }
 
-func (i *InventoryGRPC) GetProductReview(ctx context.Context, req *GetProductReviewRequest) (*GetProductReviewResponse, error) {
+func (i *InventoryGRPC) GetProductReview(ctx context.Context, req *apipb.GetProductReviewRequest) (*apipb.GetProductReviewResponse, error) {
 	review, err := i.Inventory.GetProductReview(ctx, req.Id)
 	if err != nil {
 		return nil, grpcAPIError(err)
@@ -161,7 +159,7 @@ func (i *InventoryGRPC) GetProductReview(ctx context.Context, req *GetProductRev
 	if review == nil {
 		return nil, status.Error(codes.NotFound, "review not found")
 	}
-	return &GetProductReviewResponse{
+	return &apipb.GetProductReviewResponse{
 		Id:          review.ID,
 		ProductId:   review.ProductID,
 		ReviewerId:  review.ReviewerID,

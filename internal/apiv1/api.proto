@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package api;
+package api.v1;
 
-option go_package = "github.com/henvic/pgxtutorial/internal/api";
+option go_package = "github.com/henvic/pgxtutorial/internal/apiv1/apipb";
 
 // Inventory gRPC API service.
 service Inventory {
