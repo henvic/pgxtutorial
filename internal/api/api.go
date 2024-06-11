@@ -167,6 +167,8 @@ type grpcServer struct {
 
 // Run gRPC server.
 func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Option) error {
+	s.health = health.NewServer()
+
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", address)
 	if err != nil {
@@ -176,7 +178,6 @@ func (s *grpcServer) Run(ctx context.Context, address string, oo ...otelgrpc.Opt
 		grpc.StatsHandler(otelgrpc.NewServerHandler(oo...)),
 	)
 	reflection.Register(s.grpc)
-	s.health = health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s.grpc, s.health)
 	apipb.RegisterInventoryServer(s.grpc, &InventoryGRPC{
 		Inventory: s.inventory,
