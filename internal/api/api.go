@@ -128,7 +128,7 @@ type httpServer struct {
 
 // Run HTTP server.
 func (s *httpServer) Run(ctx context.Context, address string, otelOptions ...otelhttp.Option) error {
-	handler := NewHTTPServerAPI(s.inventory, s.tel)
+	handler := NewHTTPServer(s.inventory, s.tel)
 
 	// Inject middleware, if the middleware field is set.
 	if s.middleware != nil {

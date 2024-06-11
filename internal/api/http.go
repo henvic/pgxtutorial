@@ -11,25 +11,25 @@ import (
 	"github.com/henvic/pgxtutorial/internal/telemetry"
 )
 
-// NewHTTPServerAPI creates an HTTPServer for the API.
-func NewHTTPServerAPI(i *inventory.Service, tel telemetry.Provider) http.Handler {
-	s := &HTTPServerAPI{
+// NewHTTPServer creates an HTTP server for the API.
+func NewHTTPServer(i *inventory.Service, tel telemetry.Provider) http.Handler {
+	s := &HTTPServer{
 		inventory: i,
 		tel:       tel,
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/product/", s.handleGetProduct)
-	mux.HandleFunc("/review/", s.handleGetProductReview)
+	mux.HandleFunc("GET /product/", s.handleGetProduct)
+	mux.HandleFunc("GET /review/", s.handleGetProductReview)
 	return mux
 }
 
-// HTTPServerAPI exposes inventory.Service via HTTP.
-type HTTPServerAPI struct {
+// HTTPServer exposes inventory.Service via HTTP.
+type HTTPServer struct {
 	inventory *inventory.Service
 	tel       telemetry.Provider
 }
 
-func (s *HTTPServerAPI) handleGetProduct(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/product/"):]
 	if id == "" || strings.ContainsRune(id, '/') {
 		http.NotFound(w, r)
@@ -59,7 +59,7 @@ func (s *HTTPServerAPI) handleGetProduct(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (s *HTTPServerAPI) handleGetProductReview(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/review/"):]
 	if id == "" || strings.ContainsRune(id, '/') {
 		http.NotFound(w, r)
