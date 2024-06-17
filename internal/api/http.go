@@ -8,14 +8,13 @@ import (
 	"strings"
 
 	"github.com/henvic/pgxtutorial/internal/inventory"
-	"github.com/henvic/pgxtutorial/internal/telemetry"
 )
 
 // NewHTTPServer creates an HTTP server for the API.
-func NewHTTPServer(i *inventory.Service, tel telemetry.Provider) http.Handler {
+func NewHTTPServer(i *inventory.Service, log *slog.Logger) http.Handler {
 	s := &HTTPServer{
 		inventory: i,
-		tel:       tel,
+		log:       log,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /product/", s.handleGetProduct)
@@ -26,7 +25,7 @@ func NewHTTPServer(i *inventory.Service, tel telemetry.Provider) http.Handler {
 // HTTPServer exposes inventory.Service via HTTP.
 type HTTPServer struct {
 	inventory *inventory.Service
-	tel       telemetry.Provider
+	log       *slog.Logger
 }
 
 func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +40,7 @@ func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		s.tel.Logger().Error("internal server error getting product",
+		s.log.Error("internal server error getting product",
 			slog.Any("code", http.StatusInternalServerError),
 			slog.Any("error", err),
 		)
@@ -52,7 +51,7 @@ func (s *HTTPServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "\t")
 		if err := enc.Encode(review); err != nil {
-			s.tel.Logger().Info("cannot json encode product request",
+			s.log.Info("cannot json encode product request",
 				slog.Any("error", err),
 			)
 		}
@@ -71,7 +70,7 @@ func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Reque
 		return
 	case err != nil:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		s.tel.Logger().Error("internal server error getting review",
+		s.log.Error("internal server error getting review",
 			slog.Any("code", http.StatusInternalServerError),
 			slog.Any("error", err),
 		)
@@ -82,7 +81,7 @@ func (s *HTTPServer) handleGetProductReview(w http.ResponseWriter, r *http.Reque
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "\t")
 		if err := enc.Encode(review); err != nil {
-			s.tel.Logger().Info("cannot json encode review request",
+			s.log.Info("cannot json encode review request",
 				slog.Any("error", err),
 			)
 		}

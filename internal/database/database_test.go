@@ -26,7 +26,7 @@ func TestNewPGXPool(t *testing.T) {
 
 	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{
 		Logger: slog.Default(),
-	}, tracelog.LogLevelInfo, nil)
+	}, tracelog.LogLevelInfo)
 	if err != nil {
 		t.Fatalf("NewPGXPool() error: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestNewPGXPoolErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewPGXPool(tt.args.ctx, tt.args.connString, tt.args.logger, tt.args.logLevel, nil)
+			got, err := NewPGXPool(tt.args.ctx, tt.args.connString, tt.args.logger, tt.args.logLevel)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPGXPool() error = %v, wantErr %v", err, tt.wantErr)
 				return

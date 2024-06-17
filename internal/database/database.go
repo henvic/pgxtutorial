@@ -7,38 +7,30 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // NewPGXPool is a PostgreSQL connection pool for pgx.
 //
 // Usage:
-// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{Logger: slog.Default()}, tracelog.LogLevelInfo, tracer)
+// pgPool := database.NewPGXPool(context.Background(), "", &PGXStdLogger{Logger: slog.Default()}, tracelog.LogLevelInfo)
 // defer pgPool.Close() // Close any remaining connections before shutting down your application.
 //
 // Instead of passing a configuration explicitly with a connString,
 // you might use PG environment variables such as the following to configure the database:
 // PGDATABASE, PGHOST, PGPORT, PGUSER, PGPASSWORD, PGCONNECT_TIMEOUT, etc.
 // Reference: https://www.postgresql.org/docs/current/libpq-envars.html
-func NewPGXPool(ctx context.Context, connString string, logger tracelog.Logger, logLevel tracelog.LogLevel, tracer trace.TracerProvider) (*pgxpool.Pool, error) {
+func NewPGXPool(ctx context.Context, connString string, logger tracelog.Logger, logLevel tracelog.LogLevel) (*pgxpool.Pool, error) {
 	conf, err := pgxpool.ParseConfig(connString) // Using environment variables instead of a connection string.
 	if err != nil {
 		return nil, err
 	}
 
-	// Use github.com/exaring/otelpgx if a tracer is defined.
-	// Otherwise, use github.com/jackc/pgx/v5/tracelog with the logger.
-	if tracer != nil {
-		conf.ConnConfig.Tracer = otelpgx.NewTracer(otelpgx.WithTracerProvider(tracer))
-	} else {
-		conf.ConnConfig.Tracer = &tracelog.TraceLog{
-			Logger:   logger,
-			LogLevel: logLevel,
-		}
+	conf.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   logger,
+		LogLevel: logLevel,
 	}
 
 	// pgxpool default max number of connections is the number of CPUs on your machine returned by runtime.NumCPU().
