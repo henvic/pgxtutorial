@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/henvic/pgxtutorial/internal/telemetry/telemetrytest"
+	"github.com/henvic/pgxtutorial/telemetry/telemetrytest"
 	"go.opentelemetry.io/otel/propagation"
 )
 

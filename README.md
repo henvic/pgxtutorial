@@ -34,10 +34,16 @@ $ export PGDATABASE=pgxtutorial
 # Run migrations
 $ tern migrate -m ./migrations
 # Execute application
-$ go run ./cmd/pgxtutorial
+$ go run .
 2021/11/22 07:21:21 HTTP server listening at localhost:8080
 2021/11/22 07:21:21 gRPC server listening at 127.0.0.1:8082
 ```
+
+You could also
+```
+go install github.com/henvic/pgxtutorial@latest
+```
+to just get the `pgxtutorial` binary.
 
 ## See also
 * [pgtools](https://github.com/henvic/pgtools/)

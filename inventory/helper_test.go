@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/henvic/pgtools/sqltest"
-	"github.com/henvic/pgxtutorial/internal/inventory"
-	"github.com/henvic/pgxtutorial/internal/postgres"
+	"github.com/henvic/pgxtutorial/inventory"
+	"github.com/henvic/pgxtutorial/postgres"
 )
 
 func createProducts(t testing.TB, s *inventory.Service, products []inventory.CreateProductParams) {
