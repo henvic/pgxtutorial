@@ -7,7 +7,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/henvic/pgxtutorial/internal/telemetry"
+	"github.com/henvic/pgxtutorial/telemetry"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"

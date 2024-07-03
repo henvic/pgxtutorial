@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/henvic/pgxtutorial/internal/inventory"
+	"github.com/henvic/pgxtutorial/inventory"
 )
 
 func createProducts(t testing.TB, db DB, products []inventory.CreateProductParams) {

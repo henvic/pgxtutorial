@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/henvic/pgxtutorial/internal/inventory"
-	"github.com/henvic/pgxtutorial/internal/telemetry"
+	"github.com/henvic/pgxtutorial/inventory"
+	"github.com/henvic/pgxtutorial/telemetry"
 )
 
 // NewHTTPServer creates an HTTP server for the API.

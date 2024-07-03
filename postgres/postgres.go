@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/henvic/pgtools"
-	"github.com/henvic/pgxtutorial/internal/database"
-	"github.com/henvic/pgxtutorial/internal/inventory"
+	"github.com/henvic/pgxtutorial/database"
+	"github.com/henvic/pgxtutorial/inventory"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

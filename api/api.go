@@ -10,9 +10,9 @@ import (
 	sync "sync"
 	"time"
 
-	"github.com/henvic/pgxtutorial/internal/apiv1/apipb"
-	"github.com/henvic/pgxtutorial/internal/inventory"
-	"github.com/henvic/pgxtutorial/internal/telemetry"
+	"github.com/henvic/pgxtutorial/apiv1/apipb"
+	"github.com/henvic/pgxtutorial/inventory"
+	"github.com/henvic/pgxtutorial/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/metric"

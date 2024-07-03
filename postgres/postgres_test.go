@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/henvic/pgtools/sqltest"
-	"github.com/henvic/pgxtutorial/internal/inventory"
+	"github.com/henvic/pgxtutorial/inventory"
 )
 
 var force = flag.Bool("force", false, "Force cleaning the database before starting")

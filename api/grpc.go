@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/henvic/pgxtutorial/internal/apiv1/apipb"
-	"github.com/henvic/pgxtutorial/internal/inventory"
+	"github.com/henvic/pgxtutorial/apiv1/apipb"
+	"github.com/henvic/pgxtutorial/inventory"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 )
