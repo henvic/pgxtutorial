@@ -179,7 +179,7 @@ func grpcAPIError(err error) error {
 	case err == context.Canceled:
 		return status.Error(codes.Canceled, err.Error())
 	case errors.As(err, &inventory.ValidationError{}):
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return err
 	}
