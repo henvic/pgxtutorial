@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"flag"
+	"io/fs"
 	"log"
 	"log/slog"
 	"os"
@@ -17,11 +18,19 @@ import (
 
 var force = flag.Bool("force", false, "Force cleaning the database before starting")
 
+// migrations for testing the database.
+var migrations fs.FS
+
 func TestMain(m *testing.M) {
 	if os.Getenv("INTEGRATION_TESTDB") != "true" {
 		log.Printf("Skipping tests that require database connection")
 		return
 	}
+	migRoot, err := os.OpenRoot("../../migrations")
+	if err != nil {
+		log.Fatalf("cannot open DB migrations: %v", err)
+	}
+	migrations = migRoot.FS()
 	os.Exit(m.Run())
 }
 
@@ -30,7 +39,7 @@ func TestTransactionContext(t *testing.T) {
 
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -51,7 +60,7 @@ func TestTransactionContextCanceled(t *testing.T) {
 
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -86,7 +95,7 @@ func TestWithAcquire(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -116,7 +125,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 		// Opt out of automatic tearing down migration as we want to close the connection pool before t.Cleanup() is called.
 		SkipTeardown: true,
 
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -130,7 +139,7 @@ func TestCreateProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -278,7 +287,7 @@ func TestUpdateProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -469,7 +478,7 @@ func TestGetProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -552,7 +561,7 @@ func TestSearchProducts(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -771,7 +780,7 @@ func TestDeleteProduct(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -872,7 +881,7 @@ func TestCreateProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -1048,7 +1057,7 @@ func TestUpdateProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -1306,7 +1315,7 @@ func TestGetProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -1430,7 +1439,7 @@ func TestGetProductReviews(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
@@ -1634,7 +1643,7 @@ func TestDeleteProductReview(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
 		Force: *force,
-		Files: os.DirFS("../../migrations"),
+		Files: migrations,
 	})
 	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
