@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 func TestNewPGXPool(t *testing.T) {
 	t.Parallel()
 
-	pool, err := NewPGXPool(context.Background(), "", &PGXStdLogger{
+	pool, err := NewPGXPool(t.Context(), "", &PGXStdLogger{
 		Logger: slog.Default(),
 	}, tracelog.LogLevelInfo, nil)
 	if err != nil {
@@ -33,7 +33,7 @@ func TestNewPGXPool(t *testing.T) {
 	defer pool.Close()
 
 	// Check reachability.
-	if _, err = pool.Exec(context.Background(), `SELECT 1`); err != nil {
+	if _, err = pool.Exec(t.Context(), `SELECT 1`); err != nil {
 		t.Errorf("pool.Exec() error: %v", err)
 	}
 }
@@ -55,7 +55,7 @@ func TestNewPGXPoolErrors(t *testing.T) {
 		{
 			name: "invalid_connection_string",
 			args: args{
-				ctx:        context.Background(),
+				ctx:        t.Context(),
 				connString: "http://localhost",
 				logger:     testingadapter.NewLogger(t),
 				logLevel:   tracelog.LogLevelInfo,

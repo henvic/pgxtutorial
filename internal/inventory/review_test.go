@@ -43,7 +43,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "missing_product_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ReviewerID:  "customer",
 					Score:       5,
@@ -56,7 +56,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "missing_reviewer_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					Score:       5,
@@ -69,7 +69,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "missing_title",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					ReviewerID:  "customer",
@@ -82,7 +82,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "missing_description",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:  "product",
 					ReviewerID: "customer",
@@ -95,7 +95,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "invalid_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					ReviewerID:  "customer",
@@ -109,7 +109,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					ReviewerID:  "customer",
@@ -132,7 +132,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					ReviewerID:  "customer",
@@ -155,7 +155,7 @@ func TestServiceCreateProductReview(t *testing.T) {
 				return m
 			},
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewParams{
 					ProductID:   "product",
 					ReviewerID:  "customer",
@@ -249,7 +249,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "empty",
 			args: args{
-				ctx:    context.Background(),
+				ctx:    t.Context(),
 				params: inventory.UpdateProductReviewParams{},
 			},
 			wantErr: "missing review ID",
@@ -257,7 +257,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "invalid_review_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "invalid_review_score",
 					Score: ptr(int32(-5)),
@@ -268,7 +268,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "no_product_review_title",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "no_product_review_title",
 					Title: ptr(""),
@@ -279,7 +279,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "no_product_review_description",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "no_product_review_desc",
 					Description: ptr(""),
@@ -290,7 +290,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "World",
 					Title: ptr("Earth"),
@@ -301,7 +301,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "product_review",
 					Title: ptr("Earth"),
@@ -312,7 +312,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "product_review",
 					Title: ptr("Earth"),
@@ -323,7 +323,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "no_changes",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID: "no_changes",
 				},
@@ -333,7 +333,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          firstReviewID,
 					Score:       ptr(int32(3)),
@@ -352,7 +352,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 		{
 			name: "success_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    secondReviewID,
 					Score: ptr(int32(5)),
@@ -380,7 +380,7 @@ func TestServiceUpdateProductReview(t *testing.T) {
 				return m
 			},
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "simple",
 					Title:       ptr("product review title"),
@@ -460,7 +460,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "missing_product_review_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "",
 			},
 			wantErr: "missing review ID",
@@ -468,7 +468,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  reviewID,
 			},
 			wantErr: "",
@@ -477,7 +477,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "already_deleted",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  reviewID,
 			},
 			wantErr: "",
@@ -486,14 +486,14 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "xyz",
 			},
 		},
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				id:  "abc",
 			},
 			wantErr: "context canceled",
@@ -501,7 +501,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				id:  "def",
 			},
 			wantErr: "context deadline exceeded",
@@ -509,7 +509,7 @@ func TestServiceDeleteProductReview(t *testing.T) {
 		{
 			name: "database_error",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "ghi",
 			},
 			mock: func(t testing.TB) *inventory.MockDB {
@@ -578,7 +578,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "missing_product_review_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "",
 			},
 			wantErr: "missing review ID",
@@ -586,7 +586,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  firstReviewID,
 			},
 			want: &inventory.ProductReview{
@@ -602,7 +602,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "other",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  secondReviewID,
 			},
 			want: &inventory.ProductReview{
@@ -618,7 +618,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "not_found",
 			},
 			want: nil,
@@ -626,7 +626,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				id:  "review_id",
 			},
 			wantErr: "context canceled",
@@ -634,7 +634,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				id:  "review_id",
 			},
 			wantErr: "context deadline exceeded",
@@ -642,7 +642,7 @@ func TestServiceGetProductReview(t *testing.T) {
 		{
 			name: "database_error",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "review_id",
 			},
 			mock: func(t testing.TB) *inventory.MockDB {
@@ -749,7 +749,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "desk",
 					Pagination: inventory.Pagination{
@@ -796,7 +796,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "reviewer",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ReviewerID: "hacker",
 					Pagination: inventory.Pagination{
@@ -833,7 +833,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "missing_params",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					Pagination: inventory.Pagination{
 						Limit: 10,
@@ -845,7 +845,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "wardrobe",
 					Pagination: inventory.Pagination{
@@ -861,7 +861,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.ProductReviewsParams{
 					ProductID: "bench",
 					Pagination: inventory.Pagination{
@@ -874,7 +874,7 @@ func TestServiceGetProductReviews(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				params: inventory.ProductReviewsParams{
 					ReviewerID: "glazier",
 					Pagination: inventory.Pagination{

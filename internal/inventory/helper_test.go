@@ -14,28 +14,28 @@ import (
 
 func createProducts(t testing.TB, s *inventory.Service, products []inventory.CreateProductParams) {
 	for _, p := range products {
-		if err := s.CreateProduct(context.Background(), p); err != nil {
+		if err := s.CreateProduct(t.Context(), p); err != nil {
 			t.Errorf("Service.CreateProduct() error = %v", err)
 		}
 	}
 }
 
 func createProductReview(t testing.TB, s *inventory.Service, review inventory.CreateProductReviewParams) (id string) {
-	id, err := s.CreateProductReview(context.Background(), review)
+	id, err := s.CreateProductReview(t.Context(), review)
 	if err != nil {
 		t.Errorf("DB.CreateProductReview() error = %v", err)
 	}
 	return id
 }
 
-func canceledContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
+func canceledContext(ctx context.Context) context.Context {
+	ctx, cancel := context.WithCancel(ctx)
 	cancel()
 	return ctx
 }
 
-func deadlineExceededContext() context.Context {
-	ctx, cancel := context.WithTimeout(context.Background(), -time.Second)
+func deadlineExceededContext(ctx context.Context) context.Context {
+	ctx, cancel := context.WithTimeout(ctx, -time.Second)
 	cancel()
 	return ctx
 }
@@ -58,7 +58,7 @@ func serviceWithPostgres(t *testing.T) *inventory.Service {
 			TemporaryDatabasePrefix: "test_inventory_pkg", // Avoid a clash between database names of packages on parallel execution.
 			Files:                   os.DirFS("../../migrations"),
 		})
-		db = inventory.NewService(postgres.NewDB(migration.Setup(context.Background(), ""), slog.Default()))
+		db = inventory.NewService(postgres.NewDB(migration.Setup(t.Context(), ""), slog.Default()))
 	}
 	return db
 }

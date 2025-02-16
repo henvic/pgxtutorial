@@ -42,7 +42,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "empty",
 			args: args{
-				ctx:    context.Background(),
+				ctx:    t.Context(),
 				params: inventory.CreateProductParams{},
 			},
 			wantErr: "missing product ID",
@@ -50,7 +50,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "simple",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "simple",
 					Name:        "product name",
@@ -71,7 +71,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "no_product_name",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "no_product_name",
 					Name:        "",
@@ -84,7 +84,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "no_product_description",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:    "no_product_description",
 					Name:  "product name",
@@ -96,7 +96,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "negative_price",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "negative_price",
 					Name:        "product name",
@@ -109,7 +109,7 @@ func TestServiceCreateProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.CreateProductParams{
 					ID:          "simple",
 					Name:        "product name",
@@ -134,7 +134,7 @@ func TestServiceCreateProduct(t *testing.T) {
 				return m
 			},
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "simple",
 					Name:        "product name",
@@ -211,7 +211,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "empty",
 			args: args{
-				ctx:    context.Background(),
+				ctx:    t.Context(),
 				params: inventory.UpdateProductParams{},
 			},
 			wantErr: "missing product ID",
@@ -219,7 +219,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "no_product_name",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "no_product_name",
 					Name:        ptr(""),
@@ -232,7 +232,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "no_product_description",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "no_product_description",
 					Name:        ptr("product name"),
@@ -245,7 +245,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "negative_price",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "negative_price",
 					Name:        ptr("product name"),
@@ -258,7 +258,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "product_name_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr("A new name"),
@@ -274,7 +274,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "product_description_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
 					Description: ptr("A new description"),
@@ -290,7 +290,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "product_changes",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
 					Name:        ptr("Even another name"),
@@ -308,7 +308,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "World",
 					Name: ptr("Earth"),
@@ -319,7 +319,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "update_product_check_violation",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr(""),
@@ -330,7 +330,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr("Earth"),
@@ -341,7 +341,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr("Earth"),
@@ -352,7 +352,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "another_product_price_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:    "another",
 					Price: ptr(97),
@@ -368,7 +368,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 		{
 			name: "no_changes",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID: "no_changes",
 				},
@@ -390,7 +390,7 @@ func TestServiceUpdateProduct(t *testing.T) {
 				return m
 			},
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "simple",
 					Name:        ptr("product name"),
@@ -461,7 +461,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "missing_product_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "",
 			},
 			wantErr: "missing product ID",
@@ -469,7 +469,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			wantErr: "",
@@ -478,7 +478,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "product_already_deleted",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			wantErr: "",
@@ -487,14 +487,14 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "xyz",
 			},
 		},
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				id:  "product",
 			},
 			wantErr: "context canceled",
@@ -502,7 +502,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				id:  "product",
 			},
 			wantErr: "context deadline exceeded",
@@ -510,7 +510,7 @@ func TestServiceDeleteProduct(t *testing.T) {
 		{
 			name: "database_error",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			mock: func(t testing.TB) *inventory.MockDB {
@@ -565,7 +565,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "missing_product_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "",
 			},
 			wantErr: "missing product ID",
@@ -573,7 +573,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			want: &inventory.Product{
@@ -588,7 +588,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "not_found",
 			},
 			want: nil,
@@ -596,7 +596,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				id:  "product",
 			},
 			wantErr: "context canceled",
@@ -604,7 +604,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				id:  "product",
 			},
 			wantErr: "context deadline exceeded",
@@ -612,7 +612,7 @@ func TestServiceGetProduct(t *testing.T) {
 		{
 			name: "database_error",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			mock: func(t testing.TB) *inventory.MockDB {
@@ -692,7 +692,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 					Pagination: inventory.Pagination{
@@ -718,7 +718,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "missing_search_term",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "",
 					Pagination: inventory.Pagination{
@@ -731,7 +731,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "negative_min_price",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "value",
 					MinPrice:    -1,
@@ -745,7 +745,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "negative_max_price",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "value",
 					MaxPrice:    -1,
@@ -759,7 +759,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "missing_pagination_limit",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 				},
@@ -769,7 +769,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "bad_pagination_offset",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 					Pagination: inventory.Pagination{
@@ -783,7 +783,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "product_very_expensive",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "plain desk",
 					MinPrice:    900,
@@ -801,7 +801,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "home",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 					Pagination: inventory.Pagination{
@@ -835,7 +835,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "home_paginated",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 					Pagination: inventory.Pagination{
@@ -862,7 +862,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "home_cheaper",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "home",
 					MaxPrice:    130,
@@ -889,7 +889,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "xyz",
 					Pagination: inventory.Pagination{
@@ -905,7 +905,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 				params: inventory.SearchProductsParams{
 					QueryString: "xyz",
 					Pagination: inventory.Pagination{
@@ -918,7 +918,7 @@ func TestServiceSearchProducts(t *testing.T) {
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 				params: inventory.SearchProductsParams{
 					QueryString: "xyz",
 					Pagination: inventory.Pagination{

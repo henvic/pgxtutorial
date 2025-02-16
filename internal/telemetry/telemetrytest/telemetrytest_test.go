@@ -1,7 +1,6 @@
 package telemetrytest_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestProvider(t *testing.T) {
 		t.Errorf("mem.Log() = %v doesn't contain %v", got, want)
 	}
 
-	_, span := tel.Tracer().Start(context.Background(), "span")
+	_, span := tel.Tracer().Start(t.Context(), "span")
 	span.AddEvent("an_event")
 	span.End()
 	spans := mem.Trace()
@@ -32,12 +31,12 @@ func TestProvider(t *testing.T) {
 	if err != nil {
 		t.Errorf("tel.Meter().Int64Counter() = %v, want nil", err)
 	}
-	i.Add(context.Background(), 63)
+	i.Add(t.Context(), 63)
 	if !strings.Contains(mem.Meter(), "onecounter") {
 		t.Errorf("mem.Meter() = %v, want to contain %v", mem.Meter(), "onecounter")
 	}
 	mem.Reset()
-	i.Add(context.Background(), 1337)
+	i.Add(t.Context(), 1337)
 	if mem.Log() != "" {
 		t.Errorf("mem.Log() = %v, want empty", mem.Log())
 	}
@@ -47,7 +46,7 @@ func TestProvider(t *testing.T) {
 	if !strings.Contains(mem.Meter(), `"Value":1400`) {
 		t.Errorf("mem.Meter() = %v, want to contain %v", mem.Meter(), `"Value":1400`)
 	}
-	tel.Propagator().Inject(context.Background(), propagation.HeaderCarrier{
+	tel.Propagator().Inject(t.Context(), propagation.HeaderCarrier{
 		"abc": []string{"def"},
 	})
 	if len(tel.Propagator().Fields()) != 3 {

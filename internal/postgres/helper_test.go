@@ -10,7 +10,7 @@ import (
 
 func createProducts(t testing.TB, db DB, products []inventory.CreateProductParams) {
 	for _, p := range products {
-		if err := db.CreateProduct(context.Background(), p); err != nil {
+		if err := db.CreateProduct(t.Context(), p); err != nil {
 			t.Errorf("DB.CreateProduct() error = %v", err)
 		}
 	}
@@ -18,20 +18,20 @@ func createProducts(t testing.TB, db DB, products []inventory.CreateProductParam
 
 func createProductReviews(t testing.TB, db DB, reviews []inventory.CreateProductReviewDBParams) {
 	for _, r := range reviews {
-		if err := db.CreateProductReview(context.Background(), r); err != nil {
+		if err := db.CreateProductReview(t.Context(), r); err != nil {
 			t.Errorf("DB.CreateProductReview() error = %v", err)
 		}
 	}
 }
 
-func canceledContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
+func canceledContext(ctx context.Context) context.Context {
+	ctx, cancel := context.WithCancel(ctx)
 	cancel()
 	return ctx
 }
 
-func deadlineExceededContext() context.Context {
-	ctx, cancel := context.WithTimeout(context.Background(), -time.Second)
+func deadlineExceededContext(ctx context.Context) context.Context {
+	ctx, cancel := context.WithTimeout(ctx, -time.Second)
 	cancel()
 	return ctx
 }

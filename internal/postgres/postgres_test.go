@@ -32,10 +32,10 @@ func TestTransactionContext(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
-	ctx, err := db.TransactionContext(context.Background())
+	ctx, err := db.TransactionContext(t.Context())
 	if err != nil {
 		t.Errorf("cannot create transaction context: %v", err)
 	}
@@ -53,10 +53,10 @@ func TestTransactionContextCanceled(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
-	canceledCtx, immediateCancel := context.WithCancel(context.Background())
+	canceledCtx, immediateCancel := context.WithCancel(t.Context())
 	immediateCancel()
 
 	if _, err := db.TransactionContext(canceledCtx); err != context.Canceled {
@@ -68,7 +68,7 @@ func TestCommitNoTransaction(t *testing.T) {
 	t.Parallel()
 
 	db := &DB{}
-	if err := db.Commit(context.Background()); err.Error() != "context has no transaction" {
+	if err := db.Commit(t.Context()); err.Error() != "context has no transaction" {
 		t.Errorf("unexpected error value: %v", err)
 	}
 }
@@ -77,7 +77,7 @@ func TestRollbackNoTransaction(t *testing.T) {
 	t.Parallel()
 
 	db := &DB{}
-	if err := db.Rollback(context.Background()); err.Error() != "context has no transaction" {
+	if err := db.Rollback(t.Context()); err.Error() != "context has no transaction" {
 		t.Errorf("unexpected error value: %v", err)
 	}
 }
@@ -88,11 +88,11 @@ func TestWithAcquire(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	// Reuse the same connection for executing SQL commands.
-	dbCtx, err := db.WithAcquire(context.Background())
+	dbCtx, err := db.WithAcquire(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
 	}
@@ -118,7 +118,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 	migration.Teardown(context.Background())
 	if _, err := db.WithAcquire(context.Background()); err == nil {
@@ -132,7 +132,7 @@ func TestCreateProduct(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	type args struct {
@@ -148,7 +148,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "hello",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "Hello",
 					Name:        "A name",
@@ -168,7 +168,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "world",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "World",
 					Name:        "Earth",
@@ -188,7 +188,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "world_already_exists",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "World",
 					Name:        "Earth",
@@ -201,7 +201,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "create_product_check_empty_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "",
 					Name:        "name",
@@ -214,7 +214,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "create_product_check_empty_name",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "id",
 					Name:        "",
@@ -227,7 +227,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "create_product_check_negative_price",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductParams{
 					ID:          "id",
 					Name:        "name",
@@ -240,14 +240,14 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -280,7 +280,7 @@ func TestUpdateProduct(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	// Add some products that will be modified next:
@@ -318,7 +318,7 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "product_name_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr("A new name"),
@@ -334,7 +334,7 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "product_description_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
 					Description: ptr("A new description"),
@@ -350,7 +350,7 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "product_changes",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:          "product",
 					Name:        ptr("Even another name"),
@@ -368,7 +368,7 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "World",
 					Name: ptr("Earth"),
@@ -379,7 +379,7 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "update_product_check_empty_name",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:   "product",
 					Name: ptr(""),
@@ -390,21 +390,21 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
 		{
 			name: "another_product_price_change",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductParams{
 					ID:    "another",
 					Price: ptr(97),
@@ -446,7 +446,7 @@ func TestUpdateProduct(t *testing.T) {
 	}
 
 	// Verify UPDATE has a WHERE clause avoiding changing unrelated rows:
-	got, err := db.GetProduct(context.Background(), "do_not_change")
+	got, err := db.GetProduct(t.Context(), "do_not_change")
 	if err != nil {
 		t.Errorf("DB.GetProduct() error = %v", err)
 	}
@@ -471,7 +471,7 @@ func TestGetProduct(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -496,7 +496,7 @@ func TestGetProduct(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			want: &inventory.Product{
@@ -511,7 +511,7 @@ func TestGetProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "not_found",
 			},
 			want: nil,
@@ -519,14 +519,14 @@ func TestGetProduct(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -554,12 +554,12 @@ func TestSearchProducts(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	// On this test, reuse the same connection for executing SQL commands
 	// to check acquiring and releasing a connection passed via context is working as expected.
-	dbCtx, err := db.WithAcquire(context.Background())
+	dbCtx, err := db.WithAcquire(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected DB.WithAcquire() error = %v", err)
 	}
@@ -725,7 +725,7 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.SearchProductsParams{
 					QueryString: "xyz",
 				},
@@ -738,14 +738,14 @@ func TestSearchProducts(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -773,7 +773,7 @@ func TestDeleteProduct(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -802,7 +802,7 @@ func TestDeleteProduct(t *testing.T) {
 		{
 			name: "product",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			wantErr: "",
@@ -811,7 +811,7 @@ func TestDeleteProduct(t *testing.T) {
 		{
 			name: "product_already_deleted",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "product",
 			},
 			wantErr: "",
@@ -820,21 +820,21 @@ func TestDeleteProduct(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "xyz",
 			},
 		},
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -849,7 +849,7 @@ func TestDeleteProduct(t *testing.T) {
 			if err != nil {
 				return
 			}
-			got, err := db.GetProduct(context.Background(), tt.args.id)
+			got, err := db.GetProduct(t.Context(), tt.args.id)
 			if err != nil {
 				t.Errorf("DB.GetProduct() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -860,7 +860,7 @@ func TestDeleteProduct(t *testing.T) {
 	}
 	// Check if a limited number of rows were deleted by verifying one product ("do_not_erase") exists on the database.
 	var total int
-	if err := pool.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "product"`).Scan(&total); err != nil {
+	if err := pool.QueryRow(t.Context(), `SELECT COUNT(*) as total FROM "product"`).Scan(&total); err != nil {
 		t.Fatalf(`failed to query "product" table: %v`, err)
 	}
 	if total != 1 {
@@ -874,7 +874,7 @@ func TestCreateProductReview(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -899,7 +899,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "review1",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -925,7 +925,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "invalid_id",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -942,7 +942,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "invalid_title",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "xyz",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -959,7 +959,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "invalid_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "xyz",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -976,7 +976,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "review1_already_exists",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "review1",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -993,7 +993,7 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "product_id_not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.CreateProductReviewDBParams{
 					ID: "review_has_no_product_on_database",
 					CreateProductReviewParams: inventory.CreateProductReviewParams{
@@ -1010,14 +1010,14 @@ func TestCreateProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -1050,7 +1050,7 @@ func TestUpdateProductReview(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	// Add some products that will be modified next:
@@ -1134,7 +1134,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
 					Score: ptr(int32(5)),
@@ -1152,7 +1152,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_invalid_score",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
 					Score: ptr(int32(542)),
@@ -1163,7 +1163,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_title",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_title",
 					Title: ptr("my review is really good"),
@@ -1181,7 +1181,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_invalid_title",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
 					Title: ptr(""),
@@ -1192,7 +1192,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_desc",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "review_update_desc",
 					Description: ptr("this is a string, right?"),
@@ -1210,7 +1210,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "update_multiple",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "review_update_multiple",
 					Score:       ptr(int32(5)),
@@ -1230,7 +1230,7 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "World",
 					Title: ptr("Earth"),
@@ -1241,14 +1241,14 @@ func TestUpdateProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -1281,7 +1281,7 @@ func TestUpdateProductReview(t *testing.T) {
 	}
 
 	// Verify UPDATE has a WHERE clause avoiding changing unrelated rows:
-	got, err := db.GetProductReview(context.Background(), "do_not_change")
+	got, err := db.GetProductReview(t.Context(), "do_not_change")
 	if err != nil {
 		t.Errorf("DB.GetProductReview() error = %v", err)
 	}
@@ -1308,7 +1308,7 @@ func TestGetProductReview(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1355,7 +1355,7 @@ func TestGetProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "review1",
 			},
 			want: &inventory.ProductReview{
@@ -1372,7 +1372,7 @@ func TestGetProductReview(t *testing.T) {
 		{
 			name: "success_2",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "review2",
 			},
 			want: &inventory.ProductReview{
@@ -1389,7 +1389,7 @@ func TestGetProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "not_found",
 			},
 			want: nil,
@@ -1397,14 +1397,14 @@ func TestGetProductReview(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -1432,7 +1432,7 @@ func TestGetProductReviews(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1497,7 +1497,7 @@ func TestGetProductReviews(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "greatproduct",
 				},
@@ -1527,7 +1527,7 @@ func TestGetProductReviews(t *testing.T) {
 		{
 			name: "limit",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "greatproduct",
 					Pagination: inventory.Pagination{
@@ -1553,7 +1553,7 @@ func TestGetProductReviews(t *testing.T) {
 		{
 			name: "limit",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "greatproduct",
 					Pagination: inventory.Pagination{
@@ -1578,7 +1578,7 @@ func TestGetProductReviews(t *testing.T) {
 		{
 			name: "other",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				params: inventory.ProductReviewsParams{
 					ProductID: "goodproduct",
 				},
@@ -1600,14 +1600,14 @@ func TestGetProductReviews(t *testing.T) {
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -1636,7 +1636,7 @@ func TestDeleteProductReview(t *testing.T) {
 		Force: *force,
 		Files: os.DirFS("../../migrations"),
 	})
-	pool := migration.Setup(context.Background(), "")
+	pool := migration.Setup(t.Context(), "")
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1692,7 +1692,7 @@ func TestDeleteProductReview(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "a",
 			},
 			wantErr: "",
@@ -1701,7 +1701,7 @@ func TestDeleteProductReview(t *testing.T) {
 		{
 			name: "a_again",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "a",
 			},
 			wantErr: "",
@@ -1710,7 +1710,7 @@ func TestDeleteProductReview(t *testing.T) {
 		{
 			name: "b",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "b",
 			},
 			wantErr: "",
@@ -1719,21 +1719,21 @@ func TestDeleteProductReview(t *testing.T) {
 		{
 			name: "not_found",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				id:  "xyz",
 			},
 		},
 		{
 			name: "canceled_ctx",
 			args: args{
-				ctx: canceledContext(),
+				ctx: canceledContext(t.Context()),
 			},
 			wantErr: "context canceled",
 		},
 		{
 			name: "deadline_exceeded_ctx",
 			args: args{
-				ctx: deadlineExceededContext(),
+				ctx: deadlineExceededContext(t.Context()),
 			},
 			wantErr: "context deadline exceeded",
 		},
@@ -1748,7 +1748,7 @@ func TestDeleteProductReview(t *testing.T) {
 			if err != nil {
 				return
 			}
-			got, err := db.GetProductReview(context.Background(), tt.args.id)
+			got, err := db.GetProductReview(t.Context(), tt.args.id)
 			if err != nil {
 				t.Errorf("DB.GetProductReview() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1759,7 +1759,7 @@ func TestDeleteProductReview(t *testing.T) {
 	}
 	// Check if a limited number of rows were deleted by verifying one review ("do_not_erase") exists on the database.
 	var total int
-	if err := pool.QueryRow(context.Background(), `SELECT COUNT(*) as total FROM "review"`).Scan(&total); err != nil {
+	if err := pool.QueryRow(t.Context(), `SELECT COUNT(*) as total FROM "review"`).Scan(&total); err != nil {
 		t.Fatalf(`failed to query "review" table: %v`, err)
 	}
 	if total != 1 {
