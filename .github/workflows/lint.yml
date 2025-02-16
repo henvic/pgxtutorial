@@ -28,8 +28,5 @@ jobs:
         go mod verify
         go mod download
 
-    - name: Installing static code analysis tools
-      run: ./scripts/ci-lint-install.sh
-
     - name: Run checks
       run: ./scripts/ci-lint.sh
