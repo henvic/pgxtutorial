@@ -122,7 +122,7 @@ func (p *SearchProductsParams) validate() error {
 // SearchProductsResponse from SearchProducts.
 type SearchProductsResponse struct {
 	Items []*Product
-	Total int
+	Total int32
 }
 
 // SearchProducts returns a list of products.

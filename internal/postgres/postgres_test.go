@@ -1137,7 +1137,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
-					Score: ptr(5),
+					Score: ptr(int32(5)),
 				},
 			},
 			want: &inventory.ProductReview{
@@ -1155,7 +1155,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:    "review_update_score",
-					Score: ptr(542),
+					Score: ptr(int32(542)),
 				},
 			},
 			wantErr: "invalid score",
@@ -1213,7 +1213,7 @@ func TestUpdateProductReview(t *testing.T) {
 				ctx: context.Background(),
 				params: inventory.UpdateProductReviewParams{
 					ID:          "review_update_multiple",
-					Score:       ptr(5),
+					Score:       ptr(int32(5)),
 					Title:       ptr("hello, world"),
 					Description: ptr("abc"),
 				},

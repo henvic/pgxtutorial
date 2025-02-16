@@ -11,7 +11,7 @@ type ProductReview struct {
 	ID          string
 	ProductID   string
 	ReviewerID  string
-	Score       int
+	Score       int32
 	Title       string
 	Description string
 	CreatedAt   time.Time
@@ -22,7 +22,7 @@ type ProductReview struct {
 type CreateProductReviewParams struct {
 	ProductID   string
 	ReviewerID  string
-	Score       int
+	Score       int32
 	Title       string
 	Description string
 }
@@ -47,7 +47,7 @@ func (p *CreateProductReviewParams) validate() error {
 }
 
 // validateScore checks if the score is between 0 to 5.
-func validateScore(score int) error {
+func validateScore(score int32) error {
 	if score < 0 || score > 5 {
 		return ValidationError{"invalid score"}
 	}
@@ -82,7 +82,7 @@ func (s *Service) CreateProductReview(ctx context.Context, params CreateProductR
 // UpdateProductReviewParams to use when updating an existing review.
 type UpdateProductReviewParams struct {
 	ID          string
-	Score       *int
+	Score       *int32
 	Title       *string
 	Description *string
 }

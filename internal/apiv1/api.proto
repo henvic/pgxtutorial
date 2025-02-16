@@ -1,8 +1,10 @@
-syntax = "proto3";
+edition = "2023";
 
 package api.v1;
+import "google/protobuf/go_features.proto";
 
 option go_package = "github.com/henvic/pgxtutorial/internal/apiv1/apipb";
+option features.(pb.go).api_level = API_OPAQUE;
 
 // Inventory gRPC API service.
 service Inventory {
@@ -21,9 +23,9 @@ service Inventory {
 // SearchProductsRequest message.
 message SearchProductsRequest {
   string query_string = 1;
-  optional int64 min_price = 2;
-  optional int64 max_price = 3;
-  optional int32 page = 4;
+  int64 min_price = 2;
+  int64 max_price = 3;
+  int32 page = 4 [default = 1];
 }
 
 // SearchProductsResponse message.
@@ -54,9 +56,9 @@ message CreateProductResponse {}
 // UpdateProductRequest message.
 message UpdateProductRequest {
   string id = 1;
-  optional string name = 2;
-  optional string description = 3;
-  optional int64 price = 4;
+  string name = 2;
+  string description = 3;
+  int64 price = 4;
 }
 
 // UpdateProductResponse message.
@@ -102,9 +104,9 @@ message CreateProductReviewResponse {
 // UpdateProductReviewRequest message.
 message UpdateProductReviewRequest {
   string id = 1;
-  optional int32 score = 4;
-  optional string title = 5;
-  optional string description = 6;
+  int32 score = 4;
+  string title = 5;
+  string description = 6;
 }
 
 // UpdateProductReviewResponse message.

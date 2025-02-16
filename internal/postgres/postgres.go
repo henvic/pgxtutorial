@@ -381,7 +381,7 @@ type review struct {
 	ID          string
 	ProductID   string
 	ReviewerID  string
-	Score       int
+	Score       int32
 	Title       string
 	Description string
 	CreatedAt   time.Time
