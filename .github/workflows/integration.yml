@@ -45,7 +45,7 @@ jobs:
         go mod verify
         go mod download
     - name: Run Postgres tests
-      run: go test -v -race -count 1 -covermode atomic -coverprofile=profile.cov ./...
+      run: go test -v -race -count 1 -shuffle on -covermode atomic -coverprofile=profile.cov ./...
     - name: Code coverage
       if: ${{ github.event_name != 'pull_request' }}
       uses: shogo82148/actions-goveralls@v1
