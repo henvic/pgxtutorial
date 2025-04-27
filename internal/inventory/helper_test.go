@@ -54,7 +54,7 @@ func serviceWithPostgres(t *testing.T) *inventory.Service {
 	// if the INTEGRATION_TESTDB environment variable is set to true.
 	if os.Getenv("INTEGRATION_TESTDB") == "true" {
 		migration := sqltest.New(t, sqltest.Options{
-			Force:                   *force,
+			Force:                   true,
 			TemporaryDatabasePrefix: "test_inventory_pkg", // Avoid a clash between database names of packages on parallel execution.
 			Files:                   os.DirFS("../../migrations"),
 		})

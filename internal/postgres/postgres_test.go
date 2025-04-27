@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"flag"
 	"io/fs"
 	"log"
 	"log/slog"
@@ -15,8 +14,6 @@ import (
 	"github.com/henvic/pgtools/sqltest"
 	"github.com/henvic/pgxtutorial/internal/inventory"
 )
-
-var force = flag.Bool("force", false, "Force cleaning the database before starting")
 
 // migrations for testing the database.
 var migrations fs.FS
@@ -37,12 +34,7 @@ func TestMain(m *testing.M) {
 func TestTransactionContext(t *testing.T) {
 	t.Parallel()
 
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	ctx, err := db.TransactionContext(t.Context())
 	if err != nil {
@@ -58,12 +50,7 @@ func TestTransactionContext(t *testing.T) {
 func TestTransactionContextCanceled(t *testing.T) {
 	t.Parallel()
 
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	canceledCtx, immediateCancel := context.WithCancel(t.Context())
 	immediateCancel()
@@ -93,12 +80,7 @@ func TestRollbackNoTransaction(t *testing.T) {
 
 func TestWithAcquire(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	// Reuse the same connection for executing SQL commands.
 	dbCtx, err := db.WithAcquire(t.Context())
@@ -120,7 +102,7 @@ func TestWithAcquire(t *testing.T) {
 func TestWithAcquireClosedPool(t *testing.T) {
 	t.Parallel()
 	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
+		Force: true,
 
 		// Opt out of automatic tearing down migration as we want to close the connection pool before t.Cleanup() is called.
 		SkipTeardown: true,
@@ -137,12 +119,7 @@ func TestWithAcquireClosedPool(t *testing.T) {
 
 func TestCreateProduct(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	type args struct {
 		ctx    context.Context
@@ -285,12 +262,7 @@ func TestCreateProduct(t *testing.T) {
 
 func TestUpdateProduct(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -476,12 +448,7 @@ func TestUpdateProduct(t *testing.T) {
 
 func TestGetProduct(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -559,12 +526,7 @@ func TestGetProduct(t *testing.T) {
 
 func TestSearchProducts(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	// On this test, reuse the same connection for executing SQL commands
 	// to check acquiring and releasing a connection passed via context is working as expected.
@@ -778,11 +740,7 @@ func TestSearchProducts(t *testing.T) {
 
 func TestDeleteProduct(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
+	pool := sqltest.Quick(t, migrations)
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -879,12 +837,7 @@ func TestDeleteProduct(t *testing.T) {
 
 func TestCreateProductReview(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1055,12 +1008,7 @@ func TestCreateProductReview(t *testing.T) {
 
 func TestUpdateProductReview(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	// Add some products that will be modified next:
 	createProducts(t, db, []inventory.CreateProductParams{
@@ -1313,12 +1261,7 @@ func TestUpdateProductReview(t *testing.T) {
 
 func TestGetProductReview(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1437,12 +1380,7 @@ func TestGetProductReview(t *testing.T) {
 
 func TestGetProductReviews(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
-	db := NewDB(pool, slog.Default())
+	db := NewDB(sqltest.Quick(t, migrations), slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{
 		{
@@ -1641,11 +1579,7 @@ func TestGetProductReviews(t *testing.T) {
 
 func TestDeleteProductReview(t *testing.T) {
 	t.Parallel()
-	migration := sqltest.New(t, sqltest.Options{
-		Force: *force,
-		Files: migrations,
-	})
-	pool := migration.Setup(t.Context(), "")
+	pool := sqltest.Quick(t, migrations)
 	db := NewDB(pool, slog.Default())
 
 	createProducts(t, db, []inventory.CreateProductParams{

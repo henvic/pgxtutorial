@@ -3,7 +3,6 @@ package inventory_test
 import (
 	"context"
 	"errors"
-	"flag"
 	"log"
 	"os"
 	"testing"
@@ -14,8 +13,6 @@ import (
 	"github.com/henvic/pgxtutorial/internal/inventory"
 	"go.uber.org/mock/gomock"
 )
-
-var force = flag.Bool("force", false, "Force cleaning the database before starting")
 
 func TestMain(m *testing.M) {
 	if os.Getenv("INTEGRATION_TESTDB") != "true" {
